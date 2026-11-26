@@ -424,12 +424,19 @@ function renderTable(){
 }
 // ===== 페이지 넘기기 =====
 const pager=$('#pager');
-function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;pager.scrollTo({left:el.offsetLeft,behavior:smooth?'smooth':'auto'});setTab(name)}
+let anim=0;
+function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;const to=el.offsetLeft;setTab(name);
+  cancelAnimationFrame(anim);if(!smooth||matchMedia('(prefers-reduced-motion:reduce)').matches){pager.scrollLeft=to;return}
+  const from=pager.scrollLeft,t0=performance.now(),dur=200;pager.style.scrollSnapType='none';pager.dataset.anim=1;
+  const step=t=>{const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);pager.scrollLeft=from+(to-from)*e;
+    if(k<1)anim=requestAnimationFrame(step);else{pager.style.scrollSnapType='';delete pager.dataset.anim}};
+  anim=requestAnimationFrame(step)}
 const PAGES=['quiz','wrong','table','memo'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
 const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));ro.observe($('#p-wrong'));ro.observe($('#p-memo'));
-function setTab(name){cur=name;fit();document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
-let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(PAGES[Math.round(pager.scrollLeft/pager.clientWidth)]||'quiz')},80)});
-document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);window.scrollTo({top:0})}
+const ys={};addEventListener('scroll',()=>{ys[cur]=scrollY},{passive:true});
+function setTab(name){const changed=name!==cur;cur=name;fit();if(changed)window.scrollTo(0,ys[name]||0);document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
+let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{if(pager.dataset.anim)return;setTab(PAGES[Math.round(pager.scrollLeft/pager.clientWidth)]||'quiz')},80)});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){go(g.dataset.go)}
   const r=e.target.closest('[data-r]');if(r){tblRound=r.dataset.r==='all'?'all':+r.dataset.r;store.set('sq-round',tblRound);renderTable()}});
 document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;
   const i=PAGES.indexOf(cur);if(e.key==='ArrowRight'&&i<PAGES.length-1)go(PAGES[i+1]);else if(e.key==='ArrowLeft'&&i>0)go(PAGES[i-1])});
