@@ -146,7 +146,6 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <p class="sub">퀴즈에서 틀린 기록이 쌓여요. 맞혀도 기록은 남고, 많이 틀린 순서로 보여줘요.</p>
   <div class="row">
     <button class="btn" id="startFreq">자주 틀린 문제 시험</button>
-    <button class="btn ghost" id="startEver">틀린 적 있는 문제 전부</button>
   </div>
   <p class="hint" id="wsum"></p>
 </div></header>
@@ -208,7 +207,7 @@ let wrong=store.get('sq-wrong',{});
 // 누적 기록: key → {w:틀린 횟수, c:맞힌 횟수}. 맞혀도 지워지지 않음
 let hist=store.get('sq-hist',null);
 if(!hist){hist={};for(const k in wrong)hist[k]={w:wrong[k],c:0};store.set('sq-hist',hist)}
-const FREQ=2; // 이 횟수 이상 틀리면 '자주 틀림'
+const FREQ=3; // 이 횟수 이상 틀리면 '자주 틀림'
 let qs=[],qi=0,score=0,answered=false,missed=[];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -340,7 +339,6 @@ function renderWrong(){
   const all=ranked(1),freq=ranked(FREQ);
   $('#startFreq').textContent=`자주 틀린 문제 시험 (${FREQ}번 이상 · ${freq.length}개)`;
   $('#startFreq').disabled=!freq.length;
-  $('#startEver').textContent=`틀린 적 있는 문제 전부 (${all.length}개)`;$('#startEver').disabled=!all.length;
   $('#wsum').textContent=all.length?`틀린 적 있는 문제 ${all.length}개 중 ${FREQ}번 이상 틀린 문제 ${freq.length}개`:'';
   $('#wlist').innerHTML=all.length?all.map(([k,h])=>{const q=fromKey(k),d=q.d,pct=Math.round(h.w/(h.w+h.c)*100);
     const ans=q.t.k==='sci'&&d.sciKo?d.sci+' ('+d.sciKo+')':d[q.t.k];
@@ -353,7 +351,6 @@ function renderWrong(){
 function startKeys(list){qs=shuffle(list.map(([k])=>fromKey(k)).filter(Boolean));qi=0;score=0;missed=[];go('quiz');show();setTimeout(()=>$('#stage').scrollIntoView({behavior:'smooth',block:'start'}),350)}
 document.addEventListener('click',e=>{const id=e.target.id;
   if(id==='startFreq')startKeys(ranked(FREQ));
-  else if(id==='startEver')startKeys(ranked(1));
   else if(id==='resetAsk')$('#resetRow').innerHTML='<span class="sub">오답 기록을 전부 지울까요? 되돌릴 수 없어요.</span><button class="btn" id="resetYes">지우기</button><button class="btn ghost" id="resetNo">취소</button>';
   else if(id==='resetYes'){hist={};wrong={};store.set('sq-hist',hist);store.set('sq-wrong',wrong);resetBtn();renderWrong();renderChips()}
   else if(id==='resetNo')resetBtn();});
