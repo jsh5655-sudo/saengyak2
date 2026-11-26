@@ -114,9 +114,9 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .paper{position:relative;margin:12px max(3vw,12px) 16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;
  background:#fff}
 .paper canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
-.mfloat{position:absolute;left:14px;bottom:14px;width:84px;height:84px;border-radius:50%;border:2px solid #cfdcd4;background:#fff;color:#14241d;font:700 14px 'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 6px 18px -8px rgba(20,40,30,.45);cursor:pointer;touch-action:manipulation}
+.mfloat{position:absolute;left:14px;bottom:14px;width:84px;height:84px;border-radius:50%;border:2px solid #cfdcd4;background:#fff;color:#14241d;font:700 13px/1.15 'Noto Sans KR',sans-serif;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 6px 18px -8px rgba(20,40,30,.45);cursor:pointer;touch-action:manipulation}
 .mfloat .ic{width:30px;height:18px;border-radius:4px;background:linear-gradient(90deg,#f3a3ae 0 40%,#e7eef0 40%);border:2px solid #14241d;transform:rotate(-20deg)}
-.mfloat[aria-pressed=true]{background:#c8382a;border-color:#c8382a;color:#fff}.mfloat[aria-pressed=true] .ic{border-color:#fff}
+.mfloat:active{background:#c8382a;border-color:#c8382a;color:#fff}
 .mhint{position:absolute;right:14px;bottom:8px;margin:0;font-size:13px;color:#8a9a92;pointer-events:none}
 @media(max-width:600px){.tab{padding:8px 10px;font-size:15px}.brand{font-size:16px}.mtool{gap:6px 10px}.mb{padding:6px 9px;font-size:14px}}
 @media(max-width:600px){.seal{top:14px;right:14px}.btn{flex:1}}
@@ -194,7 +194,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <button class="mb" id="mDel">이 장 삭제</button>
   </div>
 </div>
-<div class="paper" id="paper"><canvas id="cv"></canvas><button class="mfloat" id="mFloat" aria-pressed="false" aria-label="지우개 켜기/끄기"><span class="ic"></span><b>지우개</b></button><p class="mhint" id="mhint">손가락이나 펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
+<div class="paper" id="paper"><canvas id="cv"></canvas><button class="mfloat" id="mFloat" aria-label="이 장 전체 지우기"><span class="ic"></span><b>전체 지우기</b></button><p class="mhint" id="mhint">펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
 </section>
 </div>
 
@@ -445,7 +445,7 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){try{
 {
 const cv=$('#cv'),ctx=cv.getContext('2d'),paper=$('#paper');
 let sheets=store.get('sq-memo',[[]]);if(!Array.isArray(sheets)||!sheets.length)sheets=[[]];
-let si=Math.min(store.get('sq-memo-i',0),sheets.length-1),color='#14241d',width=4,eraser=false,penSeen=false,curS=null,saveT;
+const cleared={};let si=Math.min(store.get('sq-memo-i',0),sheets.length-1),color='#14241d',width=4,eraser=false,penSeen=false,curS=null,saveT;
 const save=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{store.set('sq-memo',sheets);store.set('sq-memo-i',si)},300)};
 function size(){const w=paper.clientWidth;if(!w)return;const top=paper.getBoundingClientRect().top+window.scrollY;
   const h=Math.max(420,window.innerHeight-Math.max(0,$('#mtool').offsetHeight)-($('.tabs').offsetHeight)-40);
@@ -460,7 +460,7 @@ function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke)
   $('#mhint').style.display=sheets[si].length?'none':''}
 const btnErase=e=>e.pointerType!=='touch'&&(((e.buttons|0)&34)!==0||e.button===2||e.button===5);
 const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
-cv.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')penSeen=true;if(penSeen&&e.pointerType==='touch')return;
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return; // 손가락은 못 씀 (펜·마우스만)
   e.preventDefault();cv.setPointerCapture(e.pointerId);
   // S펜/스타일러스 옆 버튼(barrel)을 누른 채 쓰거나 지우개 끝을 쓰면 지우개
   const er=eraser||btnErase(e);
@@ -472,13 +472,14 @@ const end=()=>{if(curS){curS=null;save()}};cv.addEventListener('pointerup',end);
 // 펜을 쓰면 손가락 터치는 무시(손바닥 인식 방지) → 손가락으로는 화면 넘기기 가능
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 
-cv.addEventListener('touchstart',e=>{if(penSeen)return;e.preventDefault()},{passive:false});
+
 document.addEventListener('click',e=>{
-  const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;$('#mFloat').setAttribute('aria-pressed',false);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
+  const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
   const w=e.target.closest('[data-w]');if(w){width=+w.dataset.w;document.querySelectorAll('[data-w]').forEach(b=>b.setAttribute('aria-pressed',b===w));return}
   const id=e.target.id;
-  if(id==='mEraser'||e.target.closest('#mFloat')){eraser=!eraser;$('#mEraser').setAttribute('aria-pressed',eraser);$('#mFloat').setAttribute('aria-pressed',eraser);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',!eraser&&b.dataset.pen===color))}
-  else if(id==='mUndo'){sheets[si].pop();draw();save()}
+  if(e.target.closest('#mFloat')){if(sheets[si].length){cleared[si]=sheets[si];sheets[si]=[];draw();save()}}
+  else if(id==='mEraser'){eraser=!eraser;$('#mEraser').setAttribute('aria-pressed',eraser);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',!eraser&&b.dataset.pen===color))}
+  else if(id==='mUndo'){if(!sheets[si].length&&cleared[si]){sheets[si]=cleared[si];delete cleared[si]}else sheets[si].pop();draw();save()}
   else if(id==='mClear'){if(!sheets[si].length)return;if($('#mClear').dataset.sure){sheets[si]=[];delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기';draw();save()}
     else{$('#mClear').dataset.sure=1;$('#mClear').textContent='한 번 더 누르면 지워요';setTimeout(()=>{delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기'},2500)}}
   else if(id==='mPrev'&&si>0){si--;draw();save()}
