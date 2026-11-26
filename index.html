@@ -393,7 +393,12 @@ document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagNam
   const i=PAGES.indexOf(cur);if(e.key==='ArrowRight'&&i<PAGES.length-1)go(PAGES[i+1]);else if(e.key==='ArrowLeft'&&i>0)go(PAGES[i-1])});
 addEventListener('hashchange',()=>go(location.hash.slice(1)||'quiz'));
 renderTable();
-if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+if('serviceWorker' in navigator&&location.protocol==='https:'){try{
+  const had=!!navigator.serviceWorker.controller;let reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{})});
+}catch(e){}}
 requestAnimationFrame(()=>{const h=location.hash.slice(1);if(PAGES.includes(h)&&h!=='quiz')go(h,false)});
 
 }
