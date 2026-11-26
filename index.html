@@ -136,11 +136,14 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 <header class="band top"><div class="wrap">
   <h1>생약 암기 퀴즈</h1>
   <p class="sub">생약학2 기말 · 학명·성분은 직접 쓰고, 나머지는 보기에서 고르기</p>
+  <div class="lbl">회차</div>
+  <div class="chips" id="qrounds"></div>
   <div class="lbl">출제 범위 (생약) — <span style="color:var(--seal)">★</span> 기출</div>
   <div class="chips" id="drugs"></div>
   <div class="lbl">문제 유형</div>
   <div class="chips" id="types"></div>
   <div class="row">
+    <button class="btn" id="resume" hidden>이어서 풀기</button>
     <button class="btn" id="start">전체 풀기</button>
     <button class="btn ghost" id="startWrong">틀렸던 문제만</button>
     <span class="sub" id="count"></span>
@@ -251,7 +254,18 @@ let wrong=store.get('sq-wrong',{});
 let hist=store.get('sq-hist',null);
 if(!hist){hist={};for(const k in wrong)hist[k]={w:wrong[k],c:0};store.set('sq-hist',hist)}
 const FREQ=3; // 이 횟수 이상 틀리면 '자주 틀림'
-let qs=[],qi=0,score=0,answered=false,missed=[];
+let qs=[],qi=0,score=0,answered=false,missed=[],mode='';
+let qround=store.get('sq-qround','all'); // 퀴즈 회차: 'all' 또는 숫자
+let sess=store.get('sq-sess',{}); // 풀던 문제 이어풀기: mode → {keys,qi,score,missed}
+const roundKey=()=>qround==='all'?'all':'r'+qround;
+const modeLabel=m=>m==='all'?'전체 회차':m[0]==='r'?m.slice(1)+'회차':{wrong:'틀렸던 문제',freq:'자주 틀린 문제',missed:'이번에 틀린 문제'}[m]||m;
+const inRound=d=>qround==='all'||d.round===qround;
+function saveSess(){if(!mode)return;const next=answered?qi+1:qi;
+  if(next>=qs.length)delete sess[mode];else sess[mode]={keys:qs.map(q=>q.key),qi:next,score,missed:missed.map(q=>q.key),at:Date.now()};
+  store.set('sq-sess',sess);store.set('sq-last',mode)}
+function resume(m){const S=sess[m];if(!S)return;const list=S.keys.map(k=>fromKey(k)).filter(Boolean);if(!list.length){delete sess[m];return}
+  mode=m;qs=list;qi=Math.min(S.qi,qs.length);score=S.score;missed=S.missed.map(k=>fromKey(k)).filter(Boolean);go('quiz');show();
+  setTimeout(()=>$('#stage').scrollIntoView({behavior:'smooth',block:'start'}),250)}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s).toLowerCase().replace(/[\s\-_:,.()（）·①②③④⑤=]/g,'');
@@ -259,7 +273,11 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random(
 const has=(d,k)=>k==='test'?!!d.test:k==='use'?!!d.use:true;
 
 function renderChips(){
-  $('#drugs').innerHTML=DRUGS.map(d=>`<button class="chip" data-d="${d.id}" aria-pressed="${on.has(d.id)}">${esc(d.ko)}${Object.keys(d.past).length?'<span class="st">★</span>':''}</button>`).join('');
+  const rs=[...new Set(DRUGS.map(d=>d.round))];
+  $('#qrounds').innerHTML=['all',...rs].map(r=>`<button class="chip" data-qr="${r}" aria-pressed="${String(qround)===String(r)}">${r==='all'?'전체':r+'회차'}${sess[r==='all'?'all':'r'+r]?' <small>· 푸는 중</small>':''}</button>`).join('');
+  const S=sess[roundKey()];const rb=$('#resume');rb.hidden=!S;if(S)rb.textContent=`이어서 풀기 (${S.qi+1}/${S.keys.length})`;
+  $('#start').textContent=S?'처음부터 새로':(qround==='all'?'전체 풀기':qround+'회차 풀기');
+  $('#drugs').innerHTML=DRUGS.filter(inRound).map(d=>`<button class="chip" data-d="${d.id}" aria-pressed="${on.has(d.id)}">${esc(d.ko)}${Object.keys(d.past).length?'<span class="st">★</span>':''}</button>`).join('');
   $('#types').innerHTML=TYPES.map(t=>`<button class="chip" data-t="${t.k}" aria-pressed="${typesOn.has(t.k)}">${t.t} <small>${t.mc?'객관식':'주관식'}</small></button>`).join('');
   const n=build(false).length,w=build(true).length;
   $('#count').textContent=`${n}문제 · 틀렸던 문제 ${w}개`;
@@ -267,7 +285,7 @@ function renderChips(){
 }
 function build(onlyWrong){
   const out=[];
-  for(const d of DRUGS){ if(!on.has(d.id))continue;
+  for(const d of DRUGS){ if(!on.has(d.id)||!inRound(d))continue;
     for(const t of TYPES){ if(!typesOn.has(t.k)||!has(d,t.k))continue;
       const key=d.id+':'+t.k; if(onlyWrong&&!wrong[key])continue;
       out.push({d,t,key});}}
@@ -279,7 +297,7 @@ function options(q){
   return shuffle([right,...shuffle(pool).slice(0,4)]);
 }
 function start(onlyWrong){
-  qs=shuffle(build(onlyWrong));qi=0;score=0;missed=[];show();
+  mode=onlyWrong?'wrong':roundKey();qs=shuffle(build(onlyWrong));qi=0;score=0;missed=[];show();
   $('#stage').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function prompt(q){
@@ -311,12 +329,13 @@ function show(){
      <div id="fb"></div>
    </article>`;
   const inp=$('#inp'); if(inp)inp.focus();
+  saveSess();
 }
 function mark(ok,q){
   answered=true;
   if(ok){score++;delete wrong[q.key]}else{wrong[q.key]=(wrong[q.key]||0)+1;missed.push(q)}
   const h=hist[q.key]||(hist[q.key]={w:0,c:0});ok?h.c++:h.w++;
-  store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();
+  store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();saveSess();
 }
 function feedback(ok,q,extra=''){
   const d=q.d;
@@ -346,6 +365,7 @@ function check(give){
   mark(ok,q);feedback(ok,q,extra);
 }
 function result(){
+  if(mode&&sess[mode]){delete sess[mode];store.set('sq-sess',sess)}
   const pct=qs.length?Math.round(score/qs.length*100):0;
   $('#stage').innerHTML=`<div class="prog"><i style="width:100%"></i></div>
    <article class="card res"><h2>${score} / ${qs.length} · ${pct}점</h2>
@@ -354,9 +374,12 @@ function result(){
    <div class="row"><button class="btn" id="again">다시 풀기</button>${missed.length?'<button class="btn ghost" id="retryMissed">이번에 틀린 것만</button>':''}</div></article>`;
   renderChips();
 }
-function empty(){$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">위에서 범위를 고르고 시작하세요.</p><p class="empty">학명·성분은 직접 쓰고, 생약명·과명·응용·확인시험은 보기에서 고릅니다. 틀린 문제는 이 브라우저에 저장돼요.</p></article>`}
+function empty(){const last=store.get('sq-last','');const S=sess[last];
+  if(S){$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">${esc(modeLabel(last))} 퀴즈를 풀던 중이에요</p><p class="empty">${S.keys.length}문제 중 ${S.qi}문제 풀었어요 · 맞음 ${S.score}</p><div class="row"><button class="btn" id="resumeLast" data-m="${esc(last)}">${S.qi+1}번부터 이어서 풀기</button></div></article>`;return}
+$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">위에서 범위를 고르고 시작하세요.</p><p class="empty">학명·성분은 직접 쓰고, 생약명·과명·응용·확인시험은 보기에서 고릅니다. 틀린 문제는 이 브라우저에 저장돼요.</p></article>`}
 
 document.addEventListener('click',e=>{
+  const qr=e.target.closest('[data-qr]');if(qr){qround=qr.dataset.qr==='all'?'all':+qr.dataset.qr;store.set('sq-qround',qround);renderChips();return}
   const c=e.target.closest('[data-d]');if(c){const id=c.dataset.d;on.has(id)?on.delete(id):on.add(id);store.set('sq-on',[...on]);renderChips();return}
   const t=e.target.closest('[data-t]');if(t){const k=t.dataset.t;typesOn.has(k)?typesOn.delete(k):typesOn.add(k);store.set('sq-types',[...typesOn]);renderChips();return}
   const o=e.target.closest('.opt');if(o){pick(+o.dataset.i);return}
@@ -364,9 +387,11 @@ document.addEventListener('click',e=>{
   if(id==='start')start(false);else if(id==='startWrong')start(true);
   else if(id==='chk')check(false);else if(id==='skip')check(true);
   else if(id==='next'){qi++;show()}
-  else if(id==='override'){const q=qs[qi];score++;delete wrong[q.key];missed.pop();const h=hist[q.key];if(h){h.w=Math.max(0,h.w-1);h.c++;if(!h.w&&!h.c)delete hist[q.key]}store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();qi++;show()}
-  else if(id==='again')start(false);
-  else if(id==='retryMissed'){qs=shuffle(missed);qi=0;score=0;missed=[];show()}
+  else if(id==='override'){const q=qs[qi];score++;delete wrong[q.key];missed.pop();answered=true;saveSess();const h=hist[q.key];if(h){h.w=Math.max(0,h.w-1);h.c++;if(!h.w&&!h.c)delete hist[q.key]}store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();qi++;show()}
+  else if(id==='again'){if(mode==='freq')startKeys(ranked(FREQ));else start(mode==='wrong')}
+  else if(id==='resume')resume(roundKey());
+  else if(id==='resumeLast')resume(e.target.dataset.m);
+  else if(id==='retryMissed'){mode='missed';qs=shuffle(missed);qi=0;score=0;missed=[];show()}
 });
 document.addEventListener('keydown',e=>{
   if(!qs.length||qi>=qs.length)return;const q=qs[qi];
@@ -391,7 +416,7 @@ function renderWrong(){
     :'<li class="empty">아직 틀린 기록이 없어요. 퀴즈를 풀면 여기 쌓여요.</li>';
   $('#resetRow').style.display=all.length?'':'none';
 }
-function startKeys(list){qs=shuffle(list.map(([k])=>fromKey(k)).filter(Boolean));qi=0;score=0;missed=[];go('quiz');show();setTimeout(()=>$('#stage').scrollIntoView({behavior:'smooth',block:'start'}),350)}
+function startKeys(list){mode='freq';qs=shuffle(list.map(([k])=>fromKey(k)).filter(Boolean));qi=0;score=0;missed=[];go('quiz');show();setTimeout(()=>$('#stage').scrollIntoView({behavior:'smooth',block:'start'}),350)}
 document.addEventListener('click',e=>{const id=e.target.id;
   if(id==='startFreq')startKeys(ranked(FREQ));
   else if(id==='resetAsk')$('#resetRow').innerHTML='<span class="sub">오답 기록을 전부 지울까요? 되돌릴 수 없어요.</span><button class="btn" id="resetYes">지우기</button><button class="btn ghost" id="resetNo">취소</button>';
