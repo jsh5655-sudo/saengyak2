@@ -236,14 +236,39 @@ const DRUGS = [
   test:'2,4-DNPH 시약 — 황갈색 (cinnamaldehyde 확인)',past:{fam:['25-2']}},
  {id:'duchung',round:1,ko:'두충',hanja:'杜仲',name:'Eucommiae Cortex',sci:'Eucommia ulmoides',sciKo:'',fam:'Eucommiaceae (두충과)',
   comp:'Lignan : pinoresinol',keys:[['lignan'],['pinoresinol']],use:'강장, 강정, 진통약',past:{sci:['24-2']}},
+ // ===== 2회차 (피류) =====
+ {id:'mokdanpi',round:2,ko:'목단피',hanja:'牧丹皮',name:'Moutan Radicis Cortex',sci:'Paeonia suffruticosa',sciKo:'',fam:'Paeoniaceae (작약과)',
+  comp:'Monoterpene glycoside : paeoniflorin',keys:[['monoterpeneglycoside'],['paeoniflorin']],use:'진정, 진통, 구어혈약',past:{}},
+ {id:'sangbaekpi',round:2,ko:'상백피',hanja:'桑白皮',name:'Mori Radicis Cortex',sci:'Morus alba',sciKo:'뽕나무',fam:'Moraceae (뽕나무과)',
+  comp:'Flavonoid : morusin, kuwanon',keys:[['flavonoid'],['morusin'],['kuwanon']],use:'혈압강하, 해열진해약',past:{name:['24-2'],use:['25-2']}},
+ {id:'ogapi',round:2,ko:'오가피',hanja:'五加皮',name:'Acanthopanacis Cortex',sci:'Acanthopanax sessiliflorum',sciKo:'',fam:'Araliaceae (두릅나무과)',
+  comp:'① Triterpenoidal saponin : eleutheroside ② Coumarin',keys:[['triterpenoidalsaponin','triterpenoidsaponin'],['eleutheroside'],['coumarin']],use:'강장, 거습',past:{}},
+ {id:'yohimbe',round:2,ko:'요힘바',hanja:'',name:'Yohimbae Cortex',sci:'Pausinystalia yohimba',sciKo:'',fam:'Rubiaceae (꼭두서니과)',
+  comp:'Carboline alkaloid (Indole alkaloid) : yohimbine',keys:[['carbolinealkaloid','indolealkaloid'],['yohimbine']],use:'최음제',past:{comp:['24-2'],fam:['25-2']}},
+ {id:'jumok',round:2,ko:'주목',hanja:'朱木',name:'Taxi Cortex',sci:'Taxus cuspidata',sciKo:'',fam:'Taxaceae (주목과)',
+  comp:'Diterpene alkaloid : paclitaxel (= taxol)',keys:[['diterpenealkaloid'],['paclitaxel','taxol']],use:'항암제, 이뇨, 통경',past:{use:['24-2']}},
+ {id:'cascara',round:2,ko:'카스카라사그라다피',hanja:'',name:'Rhamni Purshianae Cortex',sci:'Rhamnus purshiana',sciKo:'',fam:'Rhamnaceae (갈매나무과)',
+  comp:'신선품 : anthranol, anthrone (환원체) → 1년 경과품 : anthraquinone (산화) 사용',keys:[['anthranol'],['anthrone'],['anthraquinone']],use:'',past:{}},
+ {id:'kinapi',round:2,ko:'키나피',hanja:'規那皮',name:'Cinchonae Cortex',sci:'Cinchona succirubra',sciKo:'',fam:'Rubiaceae (꼭두서니과)',
+  comp:'Quinoline alkaloid : quinine, quinidine',keys:[['quinolinealkaloid'],['quinine'],['quinidine']],use:'',
+  test:'Grahe 반응 — cinchona tannin 확인 / Thalleioquin 반응 — quinine, quinidine 확인',past:{test:['24-2'],comp:['25-2']},
+  etc:'확인시험: ① Grahe 반응 — cinchona tannin 확인 ② Thalleioquin 반응 — quinine, quinidine 확인',etcPast:'test'},
+ {id:'hwangbaek',round:2,ko:'황백',hanja:'黃柏',name:'Phellodendri Cortex',sci:'Phellodendron amurense',sciKo:'황벽나무',fam:'Rutaceae (운향과)',
+  comp:'① Isoquinoline alkaloid : berberine, palmatine, jateorrhizine ② Limonoid 고미질',keys:[['isoquinolinealkaloid'],['berberine'],['palmatine'],['jateorrhizine'],['limonoid']],
+  use:'고미건위, 정장제',past:{fam:['24-2'],name:['25-2']}},
+ {id:'hubak',round:2,ko:'후박',hanja:'唐厚朴',name:'Magnoliae Cortex',sci:'Magnolia obovata, Magnolia officinalis',sciKo:'일본목련, 후박',sciAlt:['Magnolia obovata','Magnolia officinalis'],fam:'Magnoliaceae (목련과)',
+  comp:'① Neolignan : magnolol, honokiol ② Isoquinoline alkaloid : magnocurarine',keys:[['neolignan'],['magnolol'],['honokiol'],['isoquinolinealkaloid'],['magnocurarine']],
+  use:'건위소화약',past:{comp:['24-2'],name:['25-2']}},
+ {id:'hanhubak',round:2,ko:'한후박',hanja:'韓厚朴',name:'Machili Cortex',sci:'Machilus thunbergii',sciKo:'',fam:'Lauraceae (녹나무과)',
+  comp:'',keys:[],use:'',past:{}},
 ];
 const DEFAULT_ON = ['daeyeop','digitalis','senna','jaborandi'];
 // 오답 보기용 추가 풀
 const EXTRA = {
  name:['Belladonnae Folium','Uvae Ursi Folium','Menthae Herba','Rhei Rhizoma','Ginseng Radix','Coptidis Rhizoma','Phellodendri Cortex','Magnoliae Cortex','Mori Radicis Cortex','Aloe'],
  fam:['Labiatae (꿀풀과)','Umbelliferae (산형과)','Ranunculaceae (미나리아재비과)','Araliaceae (두릅나무과)','Solanaceae (가지과)','Rubiaceae (꼭두서니과)','Compositae (국화과)','Magnoliaceae (목련과)','Polygonaceae (마디풀과)','Ericaceae (진달래과)'],
- use:['해열, 진통약','거담, 진해약','소화기성 궤양치료약','고미건위약','진정, 진경','보혈강장','지혈','이뇨약','부교감신경 차단약(산동)'],
- test:['Liebermann-Burchard 반응 — triterpenoid saponin 확인','Borntrager 반응 — anthraquinone 확인','Vitali 반응 — tropane alkaloid 확인','Thalleioquin 반응 — quinine 확인','Murexide 반응 — purine(caffeine) 확인','기포시험 — saponin 확인','Dragendorff 시액 — alkaloid 확인'],
+ use:['해열, 진통약','거담, 진해약','소화기성 궤양치료약','보혈강장','지혈','이뇨약','부교감신경 차단약(산동)'],
+ test:['Liebermann-Burchard 반응 — triterpenoid saponin 확인','Borntrager 반응 — anthraquinone 확인','Vitali 반응 — tropane alkaloid 확인','Murexide 반응 — purine(caffeine) 확인','기포시험 — saponin 확인','Dragendorff 시액 — alkaloid 확인'],
 };
 const TYPES = [
  {k:'name',t:'생약명',mc:true},{k:'sci',t:'학명',mc:false},{k:'fam',t:'과명',mc:true},
@@ -274,7 +299,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s).toLowerCase().replace(/[\s\-_:,.()（）·①②③④⑤=]/g,'');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-const has=(d,k)=>k==='test'?!!d.test:k==='use'?!!d.use:true;
+const has=(d,k)=>k==='test'?!!d.test:k==='use'?!!d.use:k==='comp'?!!d.comp:true;
 
 function renderChips(){
   const rs=[...new Set(DRUGS.map(d=>d.round))];
@@ -361,7 +386,7 @@ function check(give){
   if(answered)return;const q=qs[qi],v=give?'':$('#inp').value;
   if(!give&&!v.trim()){$('#inp').focus();return}
   let ok,extra='';
-  if(q.t.k==='sci'){ok=norm(v)===norm(q.d.sci);
+  if(q.t.k==='sci'){ok=[q.d.sci,...(q.d.sciAlt||[])].some(a=>norm(v)===norm(a));
     if(!ok&&v.trim())extra=`<div class="hint">내 답: ${esc(v)}</div>`;}
   else{const n=norm(v);const res=q.d.keys.map(g=>({g,hit:g.some(a=>n.includes(a))}));ok=res.every(r=>r.hit);
     extra=`<div class="keys">${res.map(r=>`<span class="${r.hit?'y':'n'}">${r.hit?'✓':'✗'} ${esc(r.g[0])}</span>`).join('')}</div>`
@@ -431,7 +456,7 @@ document.addEventListener('click',e=>{const id=e.target.id;
 function resetBtn(){$('#resetRow').innerHTML='<button class="btn ghost" id="resetAsk">기록 초기화</button>'}
 renderWrong();
 // ===== 생약표 =====
-const ROUND_NAMES={1:'기말 1회차 — 엽류 · 피류'};
+const ROUND_NAMES={1:'기말 1회차 — 엽류 · 피류',2:'기말 2회차 — 피류'};
 let tblRound=store.get('sq-round','all');
 const sup=(d,k)=>d.past[k]?`<sup>${esc(d.past[k].join('·'))} 기출</sup>`:'';
 function renderTable(){
