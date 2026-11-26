@@ -98,6 +98,12 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .tbl .st{color:var(--seal)}
 @media(max-width:600px){.tbl{font-size:14px}.tbl tr{border:1.5px solid var(--line);border-radius:10px;margin-bottom:12px;padding:10px 12px;background:var(--card)}.tbl td{border:0}.tbl td:first-child{font-size:17px;padding-inline-start:0}.tbl td:first-child::before{display:none}.tbl .rd{border:0;background:none;padding:0}.tbl .rd td{padding:4px 0;background:none}.tbl .rd td::before{display:none}}
 @media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:5.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:5em;margin-inline-start:-5.5em;white-space:normal;color:var(--mute);font-size:13px}.stack td:empty{display:none}}
+.wnote .wh{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.wnote .hjs{font-family:"Noto Serif KR",serif;color:var(--green)}
+.wnote .hot{font-size:12px;font-weight:700;color:var(--seal);border:1.5px solid var(--seal);border-radius:4px;padding:0 5px}
+.wnote .cnt{margin-inline-start:auto;font-size:14px;color:var(--mute);white-space:nowrap}
+.wnote .bar{height:5px;background:var(--line);border-radius:3px;margin:6px 0;overflow:hidden}
+.wnote .bar i{display:block;height:100%;background:var(--seal)}
 @media(max-width:600px){.seal{top:14px;right:14px}.btn{flex:1}}
 @media(prefers-reduced-motion:reduce){.prog i{transition:none}}
 </style>
@@ -107,6 +113,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <b class="brand">생약학2</b>
   <button class="tab" role="tab" data-go="quiz" aria-selected="true">퀴즈</button>
   <button class="tab" role="tab" data-go="table" aria-selected="false">생약표</button>
+  <button class="tab" role="tab" data-go="wrong" aria-selected="false">오답노트</button>
 </div></nav>
 <div class="pager" id="pager">
 <section class="page" id="p-quiz" aria-label="퀴즈">
@@ -132,6 +139,20 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <div class="chips" id="rounds" style="margin-top:16px"></div>
 </div></header>
 <div class="band"><div class="wrap wide"><table class="stack tbl" id="tbl"></table></div></div>
+</section>
+<section class="page" id="p-wrong" aria-label="오답노트">
+<header class="band top"><div class="wrap">
+  <h1>오답노트</h1>
+  <p class="sub">퀴즈에서 틀린 기록이 쌓여요. 맞혀도 기록은 남고, 많이 틀린 순서로 보여줘요.</p>
+  <div class="row">
+    <button class="btn" id="startFreq">자주 틀린 문제 시험</button>
+    <button class="btn ghost" id="startEver">틀린 적 있는 문제 전부</button>
+  </div>
+  <p class="hint" id="wsum"></p>
+</div></header>
+<div class="band"><div class="wrap"><ul class="wl wnote" id="wlist"></ul>
+  <div class="row" id="resetRow"><button class="btn ghost" id="resetAsk">기록 초기화</button></div>
+</div></div>
 </section>
 </div>
 
@@ -184,6 +205,10 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v)
 let on=new Set(store.get('sq-on',DEFAULT_ON));
 let typesOn=new Set(store.get('sq-types',TYPES.map(t=>t.k)));
 let wrong=store.get('sq-wrong',{});
+// 누적 기록: key → {w:틀린 횟수, c:맞힌 횟수}. 맞혀도 지워지지 않음
+let hist=store.get('sq-hist',null);
+if(!hist){hist={};for(const k in wrong)hist[k]={w:wrong[k],c:0};store.set('sq-hist',hist)}
+const FREQ=2; // 이 횟수 이상 틀리면 '자주 틀림'
 let qs=[],qi=0,score=0,answered=false,missed=[];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -248,7 +273,8 @@ function show(){
 function mark(ok,q){
   answered=true;
   if(ok){score++;delete wrong[q.key]}else{wrong[q.key]=(wrong[q.key]||0)+1;missed.push(q)}
-  store.set('sq-wrong',wrong);
+  const h=hist[q.key]||(hist[q.key]={w:0,c:0});ok?h.c++:h.w++;
+  store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();
 }
 function feedback(ok,q,extra=''){
   const d=q.d;
@@ -281,7 +307,7 @@ function result(){
   const pct=qs.length?Math.round(score/qs.length*100):0;
   $('#stage').innerHTML=`<div class="prog"><i style="width:100%"></i></div>
    <article class="card res"><h2>${score} / ${qs.length} · ${pct}점</h2>
-   <p class="sub">${missed.length?'틀린 문제는 저장돼서 위의 "틀렸던 문제만"으로 다시 풀 수 있어요.':'전부 맞혔어요. 다른 생약을 추가해서 풀어보세요.'}</p>
+   <p class="sub">${missed.length?'틀린 문제는 저장돼서 위의 "틀렸던 문제만"이나 오답노트에서 다시 풀 수 있어요.':'전부 맞혔어요. 다른 생약을 추가해서 풀어보세요.'}</p>
    ${missed.length?`<ul class="wl">${missed.map(q=>`<li><b>${esc(q.d.ko)}</b> · ${q.t.t}<div class="a">${esc(q.t.k==='sci'&&q.d.sciKo?q.d.sci+' ('+q.d.sciKo+')':q.d[q.t.k])}</div></li>`).join('')}</ul>`:''}
    <div class="row"><button class="btn" id="again">다시 풀기</button>${missed.length?'<button class="btn ghost" id="retryMissed">이번에 틀린 것만</button>':''}</div></article>`;
   renderChips();
@@ -296,7 +322,7 @@ document.addEventListener('click',e=>{
   if(id==='start')start(false);else if(id==='startWrong')start(true);
   else if(id==='chk')check(false);else if(id==='skip')check(true);
   else if(id==='next'){qi++;show()}
-  else if(id==='override'){const q=qs[qi];score++;delete wrong[q.key];missed.pop();store.set('sq-wrong',wrong);qi++;show()}
+  else if(id==='override'){const q=qs[qi];score++;delete wrong[q.key];missed.pop();const h=hist[q.key];if(h){h.w=Math.max(0,h.w-1);h.c++;if(!h.w&&!h.c)delete hist[q.key]}store.set('sq-wrong',wrong);store.set('sq-hist',hist);renderWrong();qi++;show()}
   else if(id==='again')start(false);
   else if(id==='retryMissed'){qs=shuffle(missed);qi=0;score=0;missed=[];show()}
 });
@@ -307,6 +333,32 @@ document.addEventListener('keydown',e=>{
   if(!answered&&!q.t.mc&&e.key==='Enter'&&!e.shiftKey&&e.target.id==='inp'){e.preventDefault();check(false)}
 });
 renderChips();empty();
+// ===== 오답노트 =====
+function fromKey(key){const [id,k]=key.split(':');const d=DRUGS.find(x=>x.id===id),t=TYPES.find(x=>x.k===k);return d&&t&&has(d,k)?{d,t,key}:null}
+function ranked(min){return Object.entries(hist).filter(([k,h])=>h.w>=min&&fromKey(k)).sort((a,b)=>b[1].w-a[1].w||(b[1].w/(b[1].w+b[1].c))-(a[1].w/(a[1].w+a[1].c)))}
+function renderWrong(){
+  const all=ranked(1),freq=ranked(FREQ);
+  $('#startFreq').textContent=`자주 틀린 문제 시험 (${FREQ}번 이상 · ${freq.length}개)`;
+  $('#startFreq').disabled=!freq.length;
+  $('#startEver').textContent=`틀린 적 있는 문제 전부 (${all.length}개)`;$('#startEver').disabled=!all.length;
+  $('#wsum').textContent=all.length?`틀린 적 있는 문제 ${all.length}개 중 ${FREQ}번 이상 틀린 문제 ${freq.length}개`:'';
+  $('#wlist').innerHTML=all.length?all.map(([k,h])=>{const q=fromKey(k),d=q.d,pct=Math.round(h.w/(h.w+h.c)*100);
+    const ans=q.t.k==='sci'&&d.sciKo?d.sci+' ('+d.sciKo+')':d[q.t.k];
+    return `<li><div class="wh"><b>${esc(d.ko)}</b>${d.hanja?` <span class="hjs">${esc(d.hanja)}</span>`:''} · ${q.t.t}${h.w>=FREQ?' <span class="hot">자주 틀림</span>':''}
+      <span class="cnt">틀림 ${h.w} · 맞음 ${h.c}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div><div class="a">${esc(ans)}</div></li>`}).join('')
+    :'<li class="empty">아직 틀린 기록이 없어요. 퀴즈를 풀면 여기 쌓여요.</li>';
+  $('#resetRow').style.display=all.length?'':'none';
+}
+function startKeys(list){qs=shuffle(list.map(([k])=>fromKey(k)).filter(Boolean));qi=0;score=0;missed=[];go('quiz');show();setTimeout(()=>$('#stage').scrollIntoView({behavior:'smooth',block:'start'}),350)}
+document.addEventListener('click',e=>{const id=e.target.id;
+  if(id==='startFreq')startKeys(ranked(FREQ));
+  else if(id==='startEver')startKeys(ranked(1));
+  else if(id==='resetAsk')$('#resetRow').innerHTML='<span class="sub">오답 기록을 전부 지울까요? 되돌릴 수 없어요.</span><button class="btn" id="resetYes">지우기</button><button class="btn ghost" id="resetNo">취소</button>';
+  else if(id==='resetYes'){hist={};wrong={};store.set('sq-hist',hist);store.set('sq-wrong',wrong);resetBtn();renderWrong();renderChips()}
+  else if(id==='resetNo')resetBtn();});
+function resetBtn(){$('#resetRow').innerHTML='<button class="btn ghost" id="resetAsk">기록 초기화</button>'}
+renderWrong();
 // ===== 생약표 =====
 const ROUND_NAMES={1:'기말 1회차 — 엽류 · 피류'};
 let tblRound=store.get('sq-round','all');
@@ -333,18 +385,18 @@ function renderTable(){
 // ===== 페이지 넘기기 =====
 const pager=$('#pager');
 function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;pager.scrollTo({left:el.offsetLeft,behavior:smooth?'smooth':'auto'});setTab(name)}
-let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
-const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));
+const PAGES=['quiz','table','wrong'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
+const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));ro.observe($('#p-wrong'));
 function setTab(name){cur=name;fit();document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
-let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(pager.scrollLeft>pager.clientWidth/2?'table':'quiz')},80)});
+let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(PAGES[Math.round(pager.scrollLeft/pager.clientWidth)]||'quiz')},80)});
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);window.scrollTo({top:0})}
   const r=e.target.closest('[data-r]');if(r){tblRound=r.dataset.r==='all'?'all':+r.dataset.r;store.set('sq-round',tblRound);renderTable()}});
 document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;
-  if(e.key==='ArrowRight')go('table');else if(e.key==='ArrowLeft')go('quiz')});
+  const i=PAGES.indexOf(cur);if(e.key==='ArrowRight'&&i<PAGES.length-1)go(PAGES[i+1]);else if(e.key==='ArrowLeft'&&i>0)go(PAGES[i-1])});
 addEventListener('hashchange',()=>go(location.hash.slice(1)||'quiz'));
 renderTable();
 if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
-requestAnimationFrame(()=>{if(location.hash==='#table')go('table',false)});
+requestAnimationFrame(()=>{const h=location.hash.slice(1);if(PAGES.includes(h)&&h!=='quiz')go(h,false)});
 
 }
 </script>
