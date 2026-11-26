@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생약학2 퀴즈·생약표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 조용하고 집중되는 암기 도구 — 시험 전날 밤에 쓰는 플래시카드
+   IDEA: 생약 표본 라벨(herbarium label) — 카드 한 장에 한자 표제, 기출은 붉은 낙관
+   PICTURE: 문제 카드 자체 — 큰 한자, 질문, 입력/보기
+   COLOUR and TYPE: 흰 바탕 + 짙은 식물 녹색, 보조 세이지, 강조는 낙관 주홍 / Noto Serif KR 표제 + Noto Sans KR 본문
+   LAYOUT: 위에 범위 선택 띠, 가운데 카드 한 장, 아래 진행 막대 */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0f1714);--ink:light-dark(#14241d,#e6eee9);--mute:light-dark(#5b6b63,#9bb0a6);
+--green:light-dark(#1f4d3a,#8fc9ac);--sage:light-dark(#e8f0eb,#18261f);--line:light-dark(#cfdcd4,#2a3c33);
+--seal:light-dark(#c8382a,#ff7a66);--ok:light-dark(#1d7a4c,#6fd39f);--bad:light-dark(#b3261e,#ff8a80);--card:light-dark(#fbfdfb,#14201b)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(5vw,16px)}
+.wrap{max-width:820px;margin:0 auto}
+h1{font:900 clamp(30px,5vw,44px)/1.05 "Noto Serif KR",serif;margin:0 0 6px;color:var(--green);text-wrap:balance}
+.sub{color:var(--mute);margin:0}
+.top{background:var(--sage);border-bottom:1px solid var(--line)}
+.lbl{font-size:14px;font-weight:700;color:var(--mute);margin:18px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed=true]{background:var(--green);border-color:var(--green);color:var(--bg)}
+.chip .st{color:var(--seal);font-size:13px}.chip[aria-pressed=true] .st{color:inherit}
+.chip small{opacity:.7;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+button{font:inherit}
+.btn{min-height:46px;padding:10px 20px;border-radius:10px;border:0;background:var(--green);color:var(--bg);font-weight:700;font-size:16px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--green);border:1.5px solid var(--green)}
+.btn:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--seal);outline-offset:2px}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.prog i{display:block;height:100%;background:var(--green);transition:width .3s}
+.meta{display:flex;justify-content:space-between;font-size:14px;color:var(--mute);margin-bottom:12px}
+.card{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:clamp(20px,4vw,36px);box-shadow:0 10px 30px -18px rgba(20,40,30,.35)}
+.card::before{content:"";position:absolute;inset:8px;border:1px dashed var(--line);border-radius:10px;pointer-events:none}
+.hanja{font:900 clamp(46px,10vw,76px)/1 "Noto Serif KR",serif;color:var(--green);margin:0}
+.ko{font-size:20px;font-weight:700;margin:8px 0 0}
+.seal{position:absolute;top:22px;right:22px;border:2.5px solid var(--seal);color:var(--seal);border-radius:6px;padding:4px 8px;font:900 14px/1.2 "Noto Serif KR",serif;transform:rotate(-6deg);text-align:center}
+.q{font-size:19px;font-weight:700;margin:26px 0 4px}
+.tag{display:inline-block;font-size:13px;color:var(--mute);margin-bottom:14px}
+input[type=text],textarea{width:100%;font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+textarea{min-height:92px;resize:vertical}
+.opts{display:grid;gap:10px}
+.opt{text-align:start;min-height:48px;padding:12px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-size:16px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--green)}
+.opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.fb{margin-top:16px;padding:14px 16px;border-radius:10px;background:var(--sage)}
+.fb b.ok{color:var(--ok)}.fb b.bad{color:var(--bad)}
+.ans{margin-top:6px}
+.keys{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.keys span{font-size:13px;padding:3px 9px;border-radius:999px;border:1px solid}
+.keys .y{color:var(--ok)}.keys .n{color:var(--bad)}
+.hint{font-size:14px;color:var(--mute);margin-top:8px}
+.res h2{font:900 34px/1.1 "Noto Serif KR",serif;color:var(--green);margin:0 0 8px}
+.wl{margin:14px 0 0;padding:0;list-style:none}
+.wl li{padding:10px 0;border-top:1px solid var(--line)}
+.wl .a{color:var(--mute);font-size:15px}
+.empty{color:var(--mute)}
+.note{font-size:13px;color:var(--mute);margin-top:22px}
+.tabs{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabin{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:6px max(5vw,16px)}
+.brand{font:900 18px "Noto Serif KR",serif;color:var(--green);margin-inline-end:auto}
+.tab{min-height:44px;padding:8px 18px;border:0;background:none;color:var(--mute);font-weight:700;font-size:16px;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected=true]{color:var(--green);border-bottom-color:var(--green)}
+.pager{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;align-items:flex-start}
+.pager::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always}
+.wrap.wide{max-width:1240px}
+.tbl{width:100%;border-collapse:collapse;font-size:15px;background:var(--card)}
+.tbl th{background:var(--green);color:var(--bg);text-align:start;padding:10px;font-size:14px;}
+.tbl td{border:1px solid var(--line);padding:10px;vertical-align:top}
+.tbl td:first-child{font-weight:700;white-space:nowrap}
+.tbl .hj{display:block;font:600 18px "Noto Serif KR",serif;color:var(--green)}
+.tbl i{font-style:italic}
+.tbl td:nth-child(6){min-width:7.5em}.tbl td:nth-child(2){min-width:8em}
+.tbl sup{color:var(--seal);font-size:11px;font-weight:700;margin-inline-start:3px;white-space:nowrap}
+.tbl .rd td{background:var(--sage);font-weight:700;color:var(--green)}
+.tbl .st{color:var(--seal)}
+@media(max-width:600px){.tbl{font-size:14px}.tbl tr{border:1.5px solid var(--line);border-radius:10px;margin-bottom:12px;padding:10px 12px;background:var(--card)}.tbl td{border:0}.tbl td:first-child{font-size:17px;padding-inline-start:0}.tbl td:first-child::before{display:none}.tbl .rd{border:0;background:none;padding:0}.tbl .rd td{padding:4px 0;background:none}.tbl .rd td::before{display:none}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:5.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:5em;margin-inline-start:-5.5em;white-space:normal;color:var(--mute);font-size:13px}.stack td:empty{display:none}}
+@media(max-width:600px){.seal{top:14px;right:14px}.btn{flex:1}}
+@media(prefers-reduced-motion:reduce){.prog i{transition:none}}
+</style>
+</head>
+<body>
+<nav class="tabs" role="tablist"><div class="tabin">
+  <b class="brand">생약학2</b>
+  <button class="tab" role="tab" data-go="quiz" aria-selected="true">퀴즈</button>
+  <button class="tab" role="tab" data-go="table" aria-selected="false">생약표</button>
+</div></nav>
+<div class="pager" id="pager">
+<section class="page" id="p-quiz" aria-label="퀴즈">
+<header class="band top"><div class="wrap">
+  <h1>생약 암기 퀴즈</h1>
+  <p class="sub">생약학2 기말 · 학명·성분은 직접 쓰고, 나머지는 보기에서 고르기 · 옆으로 넘기면 생약표</p>
+  <div class="lbl">출제 범위 (생약) — <span style="color:var(--seal)">★</span> 기출</div>
+  <div class="chips" id="drugs"></div>
+  <div class="lbl">문제 유형</div>
+  <div class="chips" id="types"></div>
+  <div class="row">
+    <button class="btn" id="start">전체 풀기</button>
+    <button class="btn ghost" id="startWrong">틀렸던 문제만</button>
+    <span class="sub" id="count"></span>
+  </div>
+</div></header>
+<main class="band"><div class="wrap" id="stage"></div></main>
+</section>
+<section class="page" id="p-table" aria-label="생약표">
+<header class="band top"><div class="wrap wide">
+  <h1>생약표</h1>
+  <p class="sub">회차별 써머리 정리 · <span style="color:var(--seal)">★</span> 기출 생약, 작은 표시는 기출된 항목 · 옆으로 넘기면 퀴즈</p>
+  <div class="chips" id="rounds" style="margin-top:16px"></div>
+</div></header>
+<div class="band"><div class="wrap wide"><table class="stack tbl" id="tbl"></table></div></div>
+</section>
+</div>
+
+<script>
+{
+// ===== 데이터: 새 생약은 여기에 추가 =====
+// past: 기출된 문제 유형 → 회차 목록 (name/sci/fam/comp/use/test)
+const DRUGS = [
+ {id:'daeyeop',round:1,ko:'다엽',hanja:'茶葉',name:'Theae Folium',sci:'Camellia sinensis',sciKo:'차나무',fam:'Theaceae (차나무과)',
+  comp:'① Phenolic compound : catechin, epigallocatechin gallate ② Purine alkaloid : caffeine',
+  keys:[['phenolic'],['catechin'],['epigallocatechingallate','egcg'],['purinealkaloid'],['caffeine']],
+  use:'각성제, 강심제, 항산화제',past:{}},
+ {id:'digitalis',round:1,ko:'디기탈리스',hanja:'洋地黃葉',name:'Digitalis Folium',sci:'Digitalis purpurea',sciKo:'',fam:'Scrophulariaceae (현삼과)',
+  comp:'Cardiac glycoside (강심배당체) : digitoxin, gitoxin',
+  keys:[['cardiacglycoside','강심배당체'],['digitoxin'],['gitoxin']],
+  use:'강심이뇨약',test:'Keller-Killiani 반응 — digitoxose(2-deoxysugar) 확인',past:{test:['24-2','25-2']},
+  etc:'확인시험: Keller-Killiani 반응 → Digitoxose(2-deoxysugar) 확인 (특이한 당이라 비당체가 아닌 당을 조사)',etcPast:'test'},
+ {id:'haechong',round:1,ko:'해총',hanja:'海葱',name:'Scillae Bulbus',sci:'Urginea scilla',sciKo:'해총',fam:'Liliaceae (백합과)',
+  comp:'Bufadienolide : scillaren',keys:[['bufadienolide'],['scillaren']],use:'',past:{}},
+ {id:'senna',round:1,ko:'센나엽',hanja:'番瀉葉',name:'Sennae Folium',sci:'Cassia angustifolia',sciKo:'협엽번사',fam:'Leguminosae (콩과)',
+  comp:'Dianthrone glycoside : sennoside',keys:[['dianthroneglycoside'],['sennoside']],use:'완하제',past:{},
+  etc:'성상: 상하양면의 표피 아래에 1층의 책상조직 존재, Calcium oxalate 집정 및 단정 존재'},
+ {id:'jaborandi',round:1,ko:'야보란디',hanja:'',name:'Jaborandi Folium',sci:'Pilocarpus jaborandi',sciKo:'',fam:'Rutaceae (운향과)',
+  comp:'Imidazole alkaloid : pilocarpine',keys:[['imidazolealkaloid'],['pilocarpine']],use:'발한, 축동약(동공축소약)',past:{comp:['25-2']}},
+ {id:'ginkgo',round:1,ko:'은행엽',hanja:'銀杏葉',name:'Ginkgo Folium',sci:'Ginkgo biloba',sciKo:'은행나무',fam:'Ginkgoaceae (은행나무과)',
+  comp:'① Biflavonoid : amentoflavone ② Diterpenoid : ginkgolide',keys:[['biflavonoid'],['amentoflavone'],['diterpenoid','diterpene'],['ginkgolide']],
+  use:'활혈약, 진해, 거담',past:{}},
+ {id:'coca',round:1,ko:'코카',hanja:'',name:'Cocae Folium',sci:'Erythroxylum coca',sciKo:'',fam:'Erythroxylaceae (코카과)',
+  comp:'Tropane alkaloid : cocaine',keys:[['tropanealkaloid'],['cocaine']],use:'국소마취',past:{comp:['24-2']}},
+ {id:'gyepi',round:1,ko:'계피(육계)',hanja:'桂皮',name:'Cinnamomi Cortex',sci:'Cinnamomum cassia',sciKo:'육계나무',fam:'Lauraceae (녹나무과)',
+  comp:'Phenylpropanoid : cinnamaldehyde',keys:[['phenylpropanoid'],['cinnamaldehyde']],use:'방향성 건위약',
+  test:'2,4-DNPH 시약 — 황갈색 (cinnamaldehyde 확인)',past:{fam:['25-2']}},
+ {id:'duchung',round:1,ko:'두충',hanja:'杜仲',name:'Eucommiae Cortex',sci:'Eucommia ulmoides',sciKo:'',fam:'Eucommiaceae (두충과)',
+  comp:'Lignan : pinoresinol',keys:[['lignan'],['pinoresinol']],use:'강장, 강정, 진통약',past:{sci:['24-2']}},
+];
+const DEFAULT_ON = ['daeyeop','digitalis','senna','jaborandi'];
+// 오답 보기용 추가 풀
+const EXTRA = {
+ name:['Belladonnae Folium','Uvae Ursi Folium','Menthae Herba','Rhei Rhizoma','Ginseng Radix','Coptidis Rhizoma','Phellodendri Cortex','Magnoliae Cortex','Mori Radicis Cortex','Aloe'],
+ fam:['Labiatae (꿀풀과)','Umbelliferae (산형과)','Ranunculaceae (미나리아재비과)','Araliaceae (두릅나무과)','Solanaceae (가지과)','Rubiaceae (꼭두서니과)','Compositae (국화과)','Magnoliaceae (목련과)','Polygonaceae (마디풀과)','Ericaceae (진달래과)'],
+ use:['해열, 진통약','거담, 진해약','소화기성 궤양치료약','고미건위약','진정, 진경','보혈강장','지혈','이뇨약','부교감신경 차단약(산동)'],
+ test:['Liebermann-Burchard 반응 — triterpenoid saponin 확인','Borntrager 반응 — anthraquinone 확인','Vitali 반응 — tropane alkaloid 확인','Thalleioquin 반응 — quinine 확인','Murexide 반응 — purine(caffeine) 확인','기포시험 — saponin 확인','Dragendorff 시액 — alkaloid 확인'],
+};
+const TYPES = [
+ {k:'name',t:'생약명',mc:true},{k:'sci',t:'학명',mc:false},{k:'fam',t:'과명',mc:true},
+ {k:'comp',t:'성분',mc:false},{k:'use',t:'응용',mc:true},{k:'test',t:'확인시험',mc:true},
+];
+// ===== 상태 =====
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let on=new Set(store.get('sq-on',DEFAULT_ON));
+let typesOn=new Set(store.get('sq-types',TYPES.map(t=>t.k)));
+let wrong=store.get('sq-wrong',{});
+let qs=[],qi=0,score=0,answered=false,missed=[];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).toLowerCase().replace(/[\s\-_:,.()（）·①②③④⑤=]/g,'');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const has=(d,k)=>k==='test'?!!d.test:k==='use'?!!d.use:true;
+
+function renderChips(){
+  $('#drugs').innerHTML=DRUGS.map(d=>`<button class="chip" data-d="${d.id}" aria-pressed="${on.has(d.id)}">${esc(d.ko)}${Object.keys(d.past).length?'<span class="st">★</span>':''}</button>`).join('');
+  $('#types').innerHTML=TYPES.map(t=>`<button class="chip" data-t="${t.k}" aria-pressed="${typesOn.has(t.k)}">${t.t} <small>${t.mc?'객관식':'주관식'}</small></button>`).join('');
+  const n=build(false).length,w=build(true).length;
+  $('#count').textContent=`${n}문제 · 틀렸던 문제 ${w}개`;
+  $('#start').disabled=!n;$('#startWrong').disabled=!w;
+}
+function build(onlyWrong){
+  const out=[];
+  for(const d of DRUGS){ if(!on.has(d.id))continue;
+    for(const t of TYPES){ if(!typesOn.has(t.k)||!has(d,t.k))continue;
+      const key=d.id+':'+t.k; if(onlyWrong&&!wrong[key])continue;
+      out.push({d,t,key});}}
+  return out;
+}
+function options(q){
+  const k=q.t.k,right=q.d[k];
+  const pool=[...new Set([...DRUGS.map(x=>x[k]).filter(Boolean),...EXTRA[k]])].filter(x=>x!==right);
+  return shuffle([right,...shuffle(pool).slice(0,4)]);
+}
+function start(onlyWrong){
+  qs=shuffle(build(onlyWrong));qi=0;score=0;missed=[];show();
+  $('#stage').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function prompt(q){
+  const d=q.d;
+  return {name:'이 생약의 생약명은?',sci:'학명(기원식물)을 쓰시오',fam:'과명은?',comp:'성분군과 성분명을 쓰시오',use:'응용(용도)은?',test:'확인시험법과 확인 물질은?'}[q.t.k];
+}
+function show(){
+  answered=false;
+  if(qi>=qs.length)return result();
+  const q=qs[qi],d=q.d,past=d.past[q.t.k];
+  let body;
+  if(q.t.mc){
+    q.opts=options(q);
+    body=`<div class="opts">${q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${i+1}. ${esc(o)}</button>`).join('')}</div>`;
+  } else {
+    body=(q.t.k==='comp'?`<textarea id="inp" placeholder="예) 성분군 : 성분명"></textarea>`:`<input type="text" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예) Genus species">`)
+      +`<div class="row"><button class="btn" id="chk">채점</button><button class="btn ghost" id="skip">모르겠음</button></div>`;
+  }
+  $('#stage').innerHTML=`
+   <div class="prog"><i style="width:${qi/qs.length*100}%"></i></div>
+   <div class="meta"><span>${qi+1} / ${qs.length}</span><span>맞음 ${score}</span></div>
+   <article class="card">
+     ${past?`<div class="seal">기출<br>${esc(past.join('·'))}</div>`:''}
+     <p class="hanja">${esc(d.hanja||d.ko)}</p>
+     ${d.hanja?'':'<p class="ko">(한자 없음)</p>'}
+     <p class="q">${prompt(q)}</p>
+     <span class="tag">${q.t.t} · ${q.t.mc?'보기에서 고르기 (숫자키 1–5)':'직접 쓰기 (Enter로 채점)'}${past?' · 기출에서 같은 내용을 물어봄':''}</span>
+     ${body}
+     <div id="fb"></div>
+   </article>`;
+  const inp=$('#inp'); if(inp)inp.focus();
+}
+function mark(ok,q){
+  answered=true;
+  if(ok){score++;delete wrong[q.key]}else{wrong[q.key]=(wrong[q.key]||0)+1;missed.push(q)}
+  store.set('sq-wrong',wrong);
+}
+function feedback(ok,q,extra=''){
+  const d=q.d;
+  const full=q.t.k==='sci'&&d.sciKo?`${d.sci} (${d.sciKo})`:d[q.t.k];
+  $('#fb').innerHTML=`<div class="fb"><b class="${ok?'ok':'bad'}">${ok?'정답!':'오답'}</b>
+    <div class="ans">정답: <b>${esc(full)}</b></div>${extra}
+    <div class="hint">${esc(d.hanja?d.hanja+' = '+d.ko:d.ko)} · ${esc(d.name)}</div>
+    <div class="row"><button class="btn" id="next">${qi+1<qs.length?'다음 문제':'결과 보기'} (Enter)</button>
+    ${!ok&&!q.t.mc?'<button class="btn ghost" id="override">맞은 걸로 하기</button>':''}</div></div>`;
+  $('#next').focus();
+}
+function pick(i){
+  if(answered)return;const q=qs[qi];const ok=q.opts[i]===q.d[q.t.k];
+  document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.d[q.t.k])b.classList.add('ok');else if(j===i)b.classList.add('bad')});
+  mark(ok,q);feedback(ok,q);
+}
+function check(give){
+  if(answered)return;const q=qs[qi],v=give?'':$('#inp').value;
+  if(!give&&!v.trim()){$('#inp').focus();return}
+  let ok,extra='';
+  if(q.t.k==='sci'){ok=norm(v)===norm(q.d.sci);
+    if(!ok&&v.trim())extra=`<div class="hint">내 답: ${esc(v)}</div>`;}
+  else{const n=norm(v);const res=q.d.keys.map(g=>({g,hit:g.some(a=>n.includes(a))}));ok=res.every(r=>r.hit);
+    extra=`<div class="keys">${res.map(r=>`<span class="${r.hit?'y':'n'}">${r.hit?'✓':'✗'} ${esc(r.g[0])}</span>`).join('')}</div>`
+      +(!ok&&v.trim()?`<div class="hint">빠진 키워드가 있어요. 표기만 다르게 쓴 거면 '맞은 걸로 하기'를 누르세요.</div>`:'');}
+  const inp=$('#inp');if(inp)inp.disabled=true;$('#chk').disabled=true;$('#skip').disabled=true;
+  mark(ok,q);feedback(ok,q,extra);
+}
+function result(){
+  const pct=qs.length?Math.round(score/qs.length*100):0;
+  $('#stage').innerHTML=`<div class="prog"><i style="width:100%"></i></div>
+   <article class="card res"><h2>${score} / ${qs.length} · ${pct}점</h2>
+   <p class="sub">${missed.length?'틀린 문제는 저장돼서 위의 "틀렸던 문제만"으로 다시 풀 수 있어요.':'전부 맞혔어요. 다른 생약을 추가해서 풀어보세요.'}</p>
+   ${missed.length?`<ul class="wl">${missed.map(q=>`<li><b>${esc(q.d.ko)}</b> · ${q.t.t}<div class="a">${esc(q.t.k==='sci'&&q.d.sciKo?q.d.sci+' ('+q.d.sciKo+')':q.d[q.t.k])}</div></li>`).join('')}</ul>`:''}
+   <div class="row"><button class="btn" id="again">다시 풀기</button>${missed.length?'<button class="btn ghost" id="retryMissed">이번에 틀린 것만</button>':''}</div></article>`;
+  renderChips();
+}
+function empty(){$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">위에서 범위를 고르고 시작하세요.</p><p class="empty">학명·성분은 직접 쓰고, 생약명·과명·응용·확인시험은 보기에서 고릅니다. 틀린 문제는 이 브라우저에 저장돼요.</p></article>`}
+
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-d]');if(c){const id=c.dataset.d;on.has(id)?on.delete(id):on.add(id);store.set('sq-on',[...on]);renderChips();return}
+  const t=e.target.closest('[data-t]');if(t){const k=t.dataset.t;typesOn.has(k)?typesOn.delete(k):typesOn.add(k);store.set('sq-types',[...typesOn]);renderChips();return}
+  const o=e.target.closest('.opt');if(o){pick(+o.dataset.i);return}
+  const id=e.target.id;
+  if(id==='start')start(false);else if(id==='startWrong')start(true);
+  else if(id==='chk')check(false);else if(id==='skip')check(true);
+  else if(id==='next'){qi++;show()}
+  else if(id==='override'){const q=qs[qi];score++;delete wrong[q.key];missed.pop();store.set('sq-wrong',wrong);qi++;show()}
+  else if(id==='again')start(false);
+  else if(id==='retryMissed'){qs=shuffle(missed);qi=0;score=0;missed=[];show()}
+});
+document.addEventListener('keydown',e=>{
+  if(!qs.length||qi>=qs.length)return;const q=qs[qi];
+  if(answered&&e.key==='Enter'){e.preventDefault();qi++;show();return}
+  if(!answered&&q.t.mc&&/^[1-5]$/.test(e.key))pick(+e.key-1);
+  if(!answered&&!q.t.mc&&e.key==='Enter'&&!e.shiftKey&&e.target.id==='inp'){e.preventDefault();check(false)}
+});
+renderChips();empty();
+// ===== 생약표 =====
+const ROUND_NAMES={1:'기말 1회차 — 엽류 · 피류'};
+let tblRound=store.get('sq-round','all');
+const sup=(d,k)=>d.past[k]?`<sup>${esc(d.past[k].join('·'))} 기출</sup>`:'';
+function renderTable(){
+  const rounds=[...new Set(DRUGS.map(d=>d.round))];
+  $('#rounds').innerHTML=['all',...rounds].map(r=>`<button class="chip" data-r="${r}" aria-pressed="${String(tblRound)===String(r)}">${r==='all'?'전체':r+'회차'}</button>`).join('');
+  const L=['이름','생약명','학명','과명','성분','응용','기타'];
+  let h=`<thead><tr>${L.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>`;
+  for(const r of rounds){ if(tblRound!=='all'&&String(tblRound)!==String(r))continue;
+    h+=`<tr class="rd"><td colspan="7">${esc(ROUND_NAMES[r]||r+'회차')}</td></tr>`;
+    for(const d of DRUGS.filter(x=>x.round===r)){
+      const star=Object.keys(d.past).length?' <span class="st">★</span>':'';
+      h+=`<tr><td>${esc(d.ko)}${star}</td>
+      <td>${esc(d.name)}<span class="hj">${esc(d.hanja||'(한자x)')}</span>${sup(d,'name')}</td>
+      <td><i>${esc(d.sci)}</i>${d.sciKo?' ('+esc(d.sciKo)+')':''}${sup(d,'sci')}</td>
+      <td>${esc(d.fam)}${sup(d,'fam')}</td>
+      <td>${esc(d.comp)}${sup(d,'comp')}</td>
+      <td>${esc(d.use)}${sup(d,'use')}</td>
+      <td>${esc(d.etc||'')}${d.etcPast?sup(d,d.etcPast):''}</td></tr>`;}}
+  $('#tbl').innerHTML=h+'</tbody>';
+  document.querySelectorAll('#tbl tr:not(.rd) td').forEach((c,i)=>c.dataset.l=L[i%7]);
+}
+// ===== 페이지 넘기기 =====
+const pager=$('#pager');
+function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;pager.scrollTo({left:el.offsetLeft,behavior:smooth?'smooth':'auto'});setTab(name)}
+let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
+const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));
+function setTab(name){cur=name;fit();document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
+let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(pager.scrollLeft>pager.clientWidth/2?'table':'quiz')},80)});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);window.scrollTo({top:0})}
+  const r=e.target.closest('[data-r]');if(r){tblRound=r.dataset.r==='all'?'all':+r.dataset.r;store.set('sq-round',tblRound);renderTable()}});
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==='ArrowRight')go('table');else if(e.key==='ArrowLeft')go('quiz')});
+addEventListener('hashchange',()=>go(location.hash.slice(1)||'quiz'));
+renderTable();
+requestAnimationFrame(()=>{if(location.hash==='#table')go('table',false)});
+
+}
+</script>
+</body>
+</html>
