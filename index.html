@@ -114,8 +114,10 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .paper{position:relative;margin:12px max(3vw,12px) 16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;
  background:#fff}
 .paper canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
-.mdiag{position:absolute;right:10px;top:8px;margin:0;padding:6px 10px;border-radius:8px;background:#14241d;color:#fff;font:13px/1.4 ui-monospace,monospace;pointer-events:none;white-space:pre}
-.mhint{position:absolute;left:14px;bottom:8px;margin:0;font-size:13px;color:#8a9a92;pointer-events:none}
+.mfloat{position:absolute;left:14px;bottom:14px;width:84px;height:84px;border-radius:50%;border:2px solid #cfdcd4;background:#fff;color:#14241d;font:700 14px 'Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 6px 18px -8px rgba(20,40,30,.45);cursor:pointer;touch-action:manipulation}
+.mfloat .ic{width:30px;height:18px;border-radius:4px;background:linear-gradient(90deg,#f3a3ae 0 40%,#e7eef0 40%);border:2px solid #14241d;transform:rotate(-20deg)}
+.mfloat[aria-pressed=true]{background:#c8382a;border-color:#c8382a;color:#fff}.mfloat[aria-pressed=true] .ic{border-color:#fff}
+.mhint{position:absolute;right:14px;bottom:8px;margin:0;font-size:13px;color:#8a9a92;pointer-events:none}
 @media(max-width:600px){.tab{padding:8px 10px;font-size:15px}.brand{font-size:16px}.mtool{gap:6px 10px}.mb{padding:6px 9px;font-size:14px}}
 @media(max-width:600px){.seal{top:14px;right:14px}.btn{flex:1}}
 @media(prefers-reduced-motion:reduce){.prog i{transition:none}}
@@ -189,10 +191,9 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <span class="mpg" id="mPg">1 / 1</span>
     <button class="mb" id="mNext" aria-label="다음 장">▶</button>
     <button class="mb" id="mAdd">+ 새 장</button>
-    <button class="mb" id="mDiag" aria-pressed="false">펜 버튼 확인</button>
   </div>
 </div>
-<div class="paper" id="paper"><canvas id="cv"></canvas><p class="mdiag" id="mdiag" hidden></p><p class="mhint" id="mhint">손가락이나 펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
+<div class="paper" id="paper"><canvas id="cv"></canvas><button class="mfloat" id="mFloat" aria-pressed="false" aria-label="지우개 켜기/끄기"><span class="ic"></span><b>지우개</b></button><p class="mhint" id="mhint">손가락이나 펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
 </section>
 </div>
 
@@ -458,26 +459,24 @@ function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke)
   $('#mhint').style.display=sheets[si].length?'none':''}
 const btnErase=e=>e.pointerType!=='touch'&&(((e.buttons|0)&34)!==0||e.button===2||e.button===5);
 const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
-cv.addEventListener('pointerdown',e=>{diag(e);if(e.pointerType==='pen')penSeen=true;if(penSeen&&e.pointerType==='touch')return;
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')penSeen=true;if(penSeen&&e.pointerType==='touch')return;
   e.preventDefault();cv.setPointerCapture(e.pointerId);
   // S펜/스타일러스 옆 버튼(barrel)을 누른 채 쓰거나 지우개 끝을 쓰면 지우개
   const er=eraser||btnErase(e);
   curS={c:color,w:er?Math.max(width,4)*5:width,e:er,p:[pos(e)]};sheets[si].push(curS);$('#mhint').style.display='none';stroke(curS)});
-cv.addEventListener('pointermove',e=>{diag(e);if(!curS)return;
+cv.addEventListener('pointermove',e=>{if(!curS)return;
   const want=eraser||btnErase(e);if(want!==curS.e){const last=curS.p[curS.p.length-1];curS={c:color,w:want?Math.max(width,4)*5:width,e:want,p:[last]};sheets[si].push(curS)}const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
   for(const ev of evs){curS.p.push(pos(ev))}const n=curS.p.length;stroke({...curS,p:curS.p.slice(Math.max(0,n-evs.length-1))})});
 const end=()=>{if(curS){curS=null;save()}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 // 펜을 쓰면 손가락 터치는 무시(손바닥 인식 방지) → 손가락으로는 화면 넘기기 가능
-let diagOn=false;const dlog=[];function diag(e,t){if(!diagOn)return;dlog.unshift(`${t||e.type} 종류:${e.pointerType||'-'} 버튼:${e.button??'-'}/${e.buttons??'-'}`);dlog.length=Math.min(dlog.length,5);$('#mdiag').textContent=dlog.join('\n')}
-cv.addEventListener('contextmenu',e=>{e.preventDefault();diag(e,'contextmenu')});
-cv.addEventListener('pointerover',e=>diag(e));
-document.addEventListener('click',e=>{if(e.target.id==='mDiag'){diagOn=!diagOn;$('#mDiag').setAttribute('aria-pressed',diagOn);$('#mdiag').hidden=!diagOn;$('#mdiag').textContent='펜 버튼을 누른 채 종이에 써 보세요'}});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+
 cv.addEventListener('touchstart',e=>{if(penSeen)return;e.preventDefault()},{passive:false});
 document.addEventListener('click',e=>{
-  const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
+  const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;$('#mFloat').setAttribute('aria-pressed',false);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
   const w=e.target.closest('[data-w]');if(w){width=+w.dataset.w;document.querySelectorAll('[data-w]').forEach(b=>b.setAttribute('aria-pressed',b===w));return}
   const id=e.target.id;
-  if(id==='mEraser'){eraser=!eraser;$('#mEraser').setAttribute('aria-pressed',eraser);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',!eraser&&b.dataset.pen===color))}
+  if(id==='mEraser'||e.target.closest('#mFloat')){eraser=!eraser;$('#mEraser').setAttribute('aria-pressed',eraser);$('#mFloat').setAttribute('aria-pressed',eraser);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',!eraser&&b.dataset.pen===color))}
   else if(id==='mUndo'){sheets[si].pop();draw();save()}
   else if(id==='mClear'){if(!sheets[si].length)return;if($('#mClear').dataset.sure){sheets[si]=[];delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기';draw();save()}
     else{$('#mClear').dataset.sure=1;$('#mClear').textContent='한 번 더 누르면 지워요';setTimeout(()=>{delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기'},2500)}}
