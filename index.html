@@ -191,6 +191,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
     <span class="mpg" id="mPg">1 / 1</span>
     <button class="mb" id="mNext" aria-label="다음 장">▶</button>
     <button class="mb" id="mAdd">+ 새 장</button>
+    <button class="mb" id="mDel">이 장 삭제</button>
   </div>
 </div>
 <div class="paper" id="paper"><canvas id="cv"></canvas><button class="mfloat" id="mFloat" aria-pressed="false" aria-label="지우개 켜기/끄기"><span class="ic"></span><b>지우개</b></button><p class="mhint" id="mhint">손가락이나 펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
@@ -455,7 +456,7 @@ function stroke(s){if(!s.p.length)return;ctx.save();ctx.globalCompositeOperation
   else for(let i=1;i<s.p.length;i++){const a=s.p[i-1],b=s.p[i];ctx.lineWidth=s.w*(s.e?1:(0.6+0.8*(b[2]||.5)));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}
   ctx.restore()}
 function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke);
-  $('#mPg').textContent=`${si+1} / ${sheets.length}`;$('#mPrev').disabled=si===0;$('#mNext').disabled=si===sheets.length-1;
+  $('#mPg').textContent=`${si+1} / ${sheets.length}`;$('#mPrev').disabled=si===0;$('#mNext').disabled=si===sheets.length-1;$('#mDel').disabled=sheets.length<=1;
   $('#mhint').style.display=sheets[si].length?'none':''}
 const btnErase=e=>e.pointerType!=='touch'&&(((e.buttons|0)&34)!==0||e.button===2||e.button===5);
 const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
@@ -482,6 +483,10 @@ document.addEventListener('click',e=>{
     else{$('#mClear').dataset.sure=1;$('#mClear').textContent='한 번 더 누르면 지워요';setTimeout(()=>{delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기'},2500)}}
   else if(id==='mPrev'&&si>0){si--;draw();save()}
   else if(id==='mNext'&&si<sheets.length-1){si++;draw();save()}
+  else if(id==='mDel'){if(sheets.length<=1)return;const b=$('#mDel');
+    const kill=()=>{sheets.splice(si,1);si=Math.min(si,sheets.length-1);delete b.dataset.sure;b.textContent='이 장 삭제';draw();save()};
+    if(!sheets[si].length||b.dataset.sure)kill();
+    else{b.dataset.sure=1;b.textContent='한 번 더 누르면 삭제';setTimeout(()=>{delete b.dataset.sure;b.textContent='이 장 삭제'},2500)}}
   else if(id==='mAdd'){sheets.push([]);si=sheets.length-1;draw();save()}
 });
 const mro=new ResizeObserver(size);mro.observe(paper);addEventListener('resize',size);size();
