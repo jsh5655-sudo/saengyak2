@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>생약학2 퀴즈·생약표</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="생약학2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#1f4d3a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;900&display=swap" rel="stylesheet">
@@ -72,7 +75,10 @@ textarea{min-height:92px;resize:vertical}
 .empty{color:var(--mute)}
 .note{font-size:13px;color:var(--mute);margin-top:22px}
 .tabs{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
-.tabin{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:6px max(5vw,16px)}
+.tabs{padding-top:env(safe-area-inset-top)}
+.tabin{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:4px;padding:6px max(5vw,16px,env(safe-area-inset-right)) 6px max(5vw,16px,env(safe-area-inset-left))}
+body{padding-bottom:env(safe-area-inset-bottom)}
+@media(display-mode:standalone){body{overscroll-behavior-y:none}}
 .brand{font:900 18px "Noto Serif KR",serif;color:var(--green);margin-inline-end:auto}
 .tab{min-height:44px;padding:8px 18px;border:0;background:none;color:var(--mute);font-weight:700;font-size:16px;border-bottom:3px solid transparent;cursor:pointer}
 .tab[aria-selected=true]{color:var(--green);border-bottom-color:var(--green)}
@@ -337,6 +343,7 @@ document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagNam
   if(e.key==='ArrowRight')go('table');else if(e.key==='ArrowLeft')go('quiz')});
 addEventListener('hashchange',()=>go(location.hash.slice(1)||'quiz'));
 renderTable();
+if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 requestAnimationFrame(()=>{if(location.hash==='#table')go('table',false)});
 
 }
