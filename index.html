@@ -127,15 +127,15 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 <nav class="tabs" role="tablist"><div class="tabin">
   <b class="brand">생약학2</b>
   <button class="tab" role="tab" data-go="quiz" aria-selected="true">퀴즈</button>
-  <button class="tab" role="tab" data-go="table" aria-selected="false">생약표</button>
   <button class="tab" role="tab" data-go="wrong" aria-selected="false">오답노트</button>
+  <button class="tab" role="tab" data-go="table" aria-selected="false">생약표</button>
   <button class="tab" role="tab" data-go="memo" aria-selected="false">이면지</button>
 </div></nav>
 <div class="pager" id="pager">
 <section class="page" id="p-quiz" aria-label="퀴즈">
 <header class="band top"><div class="wrap">
   <h1>생약 암기 퀴즈</h1>
-  <p class="sub">생약학2 기말 · 학명·성분은 직접 쓰고, 나머지는 보기에서 고르기 · 옆으로 넘기면 생약표</p>
+  <p class="sub">생약학2 기말 · 학명·성분은 직접 쓰고, 나머지는 보기에서 고르기</p>
   <div class="lbl">출제 범위 (생약) — <span style="color:var(--seal)">★</span> 기출</div>
   <div class="chips" id="drugs"></div>
   <div class="lbl">문제 유형</div>
@@ -147,14 +147,6 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   </div>
 </div></header>
 <main class="band"><div class="wrap" id="stage"></div></main>
-</section>
-<section class="page" id="p-table" aria-label="생약표">
-<header class="band top"><div class="wrap wide">
-  <h1>생약표</h1>
-  <p class="sub">회차별 써머리 정리 · <span style="color:var(--seal)">★</span> 기출 생약, 작은 표시는 기출된 항목 · 옆으로 넘기면 퀴즈</p>
-  <div class="chips" id="rounds" style="margin-top:16px"></div>
-</div></header>
-<div class="band"><div class="wrap wide"><table class="stack tbl" id="tbl"></table></div></div>
 </section>
 <section class="page" id="p-wrong" aria-label="오답노트">
 <header class="band top"><div class="wrap">
@@ -168,6 +160,14 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 <div class="band"><div class="wrap"><ul class="wl wnote" id="wlist"></ul>
   <div class="row" id="resetRow"><button class="btn ghost" id="resetAsk">기록 초기화</button></div>
 </div></div>
+</section>
+<section class="page" id="p-table" aria-label="생약표">
+<header class="band top"><div class="wrap wide">
+  <h1>생약표</h1>
+  <p class="sub">회차별 써머리 정리 · <span style="color:var(--seal)">★</span> 기출 생약, 작은 표시는 기출된 항목</p>
+  <div class="chips" id="rounds" style="margin-top:16px"></div>
+</div></header>
+<div class="band"><div class="wrap wide"><table class="stack tbl" id="tbl"></table></div></div>
 </section>
 <section class="page" id="p-memo" aria-label="이면지">
 <div class="mtool" id="mtool">
@@ -425,7 +425,7 @@ function renderTable(){
 // ===== 페이지 넘기기 =====
 const pager=$('#pager');
 function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;pager.scrollTo({left:el.offsetLeft,behavior:smooth?'smooth':'auto'});setTab(name)}
-const PAGES=['quiz','table','wrong','memo'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
+const PAGES=['quiz','wrong','table','memo'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
 const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));ro.observe($('#p-wrong'));ro.observe($('#p-memo'));
 function setTab(name){cur=name;fit();document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
 let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(PAGES[Math.round(pager.scrollLeft/pager.clientWidth)]||'quiz')},80)});
