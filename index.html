@@ -44,6 +44,9 @@ button{font:inherit}
 .btn.ghost{background:transparent;color:var(--green);border:1.5px solid var(--green)}
 .btn:disabled{opacity:.4;cursor:default}
 :focus-visible{outline:3px solid var(--seal);outline-offset:2px}
+.qbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.qbtns .btn small{font-weight:500;opacity:.8;margin-inline-start:4px}
+.qcount{margin-top:8px;font-size:14px}
+@media(max-width:600px){.qbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.qbtns .btn{padding:10px 8px;flex:none}.qbtns:has(#resume:not([hidden])) #startWrong{grid-column:1/-1}}
 .prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px}
 .prog i{display:block;height:100%;background:var(--green);transition:width .3s}
 .meta{display:flex;justify-content:space-between;font-size:14px;color:var(--mute);margin-bottom:12px}
@@ -136,18 +139,16 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 <header class="band top"><div class="wrap">
   <h1>생약 암기 퀴즈</h1>
   <p class="sub">생약학2 기말 · 학명·성분은 직접 쓰고, 나머지는 보기에서 고르기</p>
-  <div class="lbl">회차</div>
-  <div class="chips" id="qrounds"></div>
   <div class="lbl">출제 범위 (생약) — <span style="color:var(--seal)">★</span> 기출</div>
   <div class="chips" id="drugs"></div>
   <div class="lbl">문제 유형</div>
   <div class="chips" id="types"></div>
-  <div class="row">
+  <div class="qbtns">
     <button class="btn" id="resume" hidden>이어서 풀기</button>
-    <button class="btn" id="start">전체 풀기</button>
+    <button class="btn" id="start">새로 풀기</button>
     <button class="btn ghost" id="startWrong">틀렸던 문제만</button>
-    <span class="sub" id="count"></span>
   </div>
+  <p class="sub qcount" id="count"></p>
 </div></header>
 <main class="band"><div class="wrap" id="stage"></div></main>
 </section>
@@ -255,10 +256,10 @@ let hist=store.get('sq-hist',null);
 if(!hist){hist={};for(const k in wrong)hist[k]={w:wrong[k],c:0};store.set('sq-hist',hist)}
 const FREQ=3; // 이 횟수 이상 틀리면 '자주 틀림'
 let qs=[],qi=0,score=0,answered=false,missed=[],mode='';
-let qround=store.get('sq-qround','all'); // 퀴즈 회차: 'all' 또는 숫자
+let qround='all'; // 퀴즈 회차: 'all' 또는 숫자
 let sess=store.get('sq-sess',{}); // 풀던 문제 이어풀기: mode → {keys,qi,score,missed}
 const roundKey=()=>qround==='all'?'all':'r'+qround;
-const modeLabel=m=>m==='all'?'전체 회차':m[0]==='r'?m.slice(1)+'회차':{wrong:'틀렸던 문제',freq:'자주 틀린 문제',missed:'이번에 틀린 문제'}[m]||m;
+const modeLabel=m=>m==='all'?'':m[0]==='r'?m.slice(1)+'회차':{wrong:'틀렸던 문제',freq:'자주 틀린 문제',missed:'이번에 틀린 문제'}[m]||m;
 const inRound=d=>qround==='all'||d.round===qround;
 function saveSess(){if(!mode)return;const next=answered?qi+1:qi;
   if(next>=qs.length)delete sess[mode];else sess[mode]={keys:qs.map(q=>q.key),qi:next,score,missed:missed.map(q=>q.key),at:Date.now()};
@@ -274,9 +275,8 @@ const has=(d,k)=>k==='test'?!!d.test:k==='use'?!!d.use:true;
 
 function renderChips(){
   const rs=[...new Set(DRUGS.map(d=>d.round))];
-  $('#qrounds').innerHTML=['all',...rs].map(r=>`<button class="chip" data-qr="${r}" aria-pressed="${String(qround)===String(r)}">${r==='all'?'전체':r+'회차'}${sess[r==='all'?'all':'r'+r]?' <small>· 푸는 중</small>':''}</button>`).join('');
-  const S=sess[roundKey()];const rb=$('#resume');rb.hidden=!S;if(S)rb.textContent=`이어서 풀기 (${S.qi+1}/${S.keys.length})`;
-  $('#start').textContent=S?'처음부터 새로':(qround==='all'?'전체 풀기':qround+'회차 풀기');
+  const S=sess[roundKey()];const rb=$('#resume');rb.hidden=!S;if(S)rb.innerHTML=`이어서 풀기 <small>${S.qi+1}/${S.keys.length}</small>`;
+  $('#start').className=S?'btn ghost':'btn';
   $('#drugs').innerHTML=DRUGS.filter(inRound).map(d=>`<button class="chip" data-d="${d.id}" aria-pressed="${on.has(d.id)}">${esc(d.ko)}${Object.keys(d.past).length?'<span class="st">★</span>':''}</button>`).join('');
   $('#types').innerHTML=TYPES.map(t=>`<button class="chip" data-t="${t.k}" aria-pressed="${typesOn.has(t.k)}">${t.t} <small>${t.mc?'객관식':'주관식'}</small></button>`).join('');
   const n=build(false).length,w=build(true).length;
@@ -376,11 +376,10 @@ function result(){
   renderChips();
 }
 function empty(){const last=store.get('sq-last','');const S=sess[last];
-  if(S){$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">${esc(modeLabel(last))} 퀴즈를 풀던 중이에요</p><p class="empty">${S.keys.length}문제 중 ${S.qi}문제 풀었어요 · 맞음 ${S.score}</p><div class="row"><button class="btn" id="resumeLast" data-m="${esc(last)}">${S.qi+1}번부터 이어서 풀기</button></div></article>`;return}
+  if(S){$('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">${modeLabel(last)?esc(modeLabel(last))+' ':''}퀴즈를 풀던 중이에요</p><p class="empty">${S.keys.length}문제 중 ${S.qi}문제 풀었어요 · 맞음 ${S.score}</p><div class="row"><button class="btn" id="resumeLast" data-m="${esc(last)}">${S.qi+1}번부터 이어서 풀기</button></div></article>`;return}
 $('#stage').innerHTML=`<article class="card"><p class="hanja">生藥</p><p class="q">위에서 범위를 고르고 시작하세요.</p><p class="empty">학명·성분은 직접 쓰고, 생약명·과명·응용·확인시험은 보기에서 고릅니다. 틀린 문제는 이 브라우저에 저장돼요.</p></article>`}
 
 document.addEventListener('click',e=>{
-  const qr=e.target.closest('[data-qr]');if(qr){qround=qr.dataset.qr==='all'?'all':+qr.dataset.qr;store.set('sq-qround',qround);renderChips();return}
   const c=e.target.closest('[data-d]');if(c){const id=c.dataset.d;on.has(id)?on.delete(id):on.add(id);store.set('sq-on',[...on]);renderChips();return}
   const t=e.target.closest('[data-t]');if(t){const k=t.dataset.t;typesOn.has(k)?typesOn.delete(k):typesOn.add(k);store.set('sq-types',[...typesOn]);renderChips();return}
   const o=e.target.closest('.opt');if(o){pick(+o.dataset.i);return}
