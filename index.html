@@ -105,6 +105,17 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .wnote .cnt{margin-inline-start:auto;font-size:14px;color:var(--mute);white-space:nowrap}
 .wnote .bar{height:5px;background:var(--line);border-radius:3px;margin:6px 0;overflow:hidden}
 .wnote .bar i{display:block;height:100%;background:var(--seal)}
+.mtool{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px max(3vw,12px);border-bottom:1px solid var(--line);background:var(--sage)}
+.mg{display:flex;gap:6px;align-items:center}
+.mb{min-height:44px;min-width:44px;padding:6px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:15px;cursor:pointer}
+.mb[aria-pressed=true]{border-color:var(--green);box-shadow:inset 0 0 0 1.5px var(--green);font-weight:700}
+.mb.pen{padding:6px}.mb.pen i{display:block;width:24px;height:24px;border-radius:50%}
+.mpg{font-size:14px;color:var(--mute);min-width:3.5em;text-align:center}
+.paper{position:relative;margin:12px max(3vw,12px) 16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+ background:#fff;background-image:linear-gradient(#e3ebe6 1px,transparent 1px);background-size:100% 32px}
+.paper canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
+.mhint{position:absolute;left:14px;bottom:8px;margin:0;font-size:13px;color:#8a9a92;pointer-events:none}
+@media(max-width:600px){.tab{padding:8px 10px;font-size:15px}.brand{font-size:16px}.mtool{gap:6px 10px}.mb{padding:6px 9px;font-size:14px}}
 @media(max-width:600px){.seal{top:14px;right:14px}.btn{flex:1}}
 @media(prefers-reduced-motion:reduce){.prog i{transition:none}}
 </style>
@@ -115,6 +126,7 @@ body{padding-bottom:env(safe-area-inset-bottom)}
   <button class="tab" role="tab" data-go="quiz" aria-selected="true">퀴즈</button>
   <button class="tab" role="tab" data-go="table" aria-selected="false">생약표</button>
   <button class="tab" role="tab" data-go="wrong" aria-selected="false">오답노트</button>
+  <button class="tab" role="tab" data-go="memo" aria-selected="false">이면지</button>
 </div></nav>
 <div class="pager" id="pager">
 <section class="page" id="p-quiz" aria-label="퀴즈">
@@ -153,6 +165,32 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 <div class="band"><div class="wrap"><ul class="wl wnote" id="wlist"></ul>
   <div class="row" id="resetRow"><button class="btn ghost" id="resetAsk">기록 초기화</button></div>
 </div></div>
+</section>
+<section class="page" id="p-memo" aria-label="이면지">
+<div class="mtool" id="mtool">
+  <div class="mg">
+    <button class="mb pen" data-pen="#14241d" aria-pressed="true" aria-label="검정 펜"><i style="background:#14241d"></i></button>
+    <button class="mb pen" data-pen="#c8382a" aria-pressed="false" aria-label="빨강 펜"><i style="background:#c8382a"></i></button>
+    <button class="mb pen" data-pen="#1d5fb8" aria-pressed="false" aria-label="파랑 펜"><i style="background:#1d5fb8"></i></button>
+    <button class="mb" id="mEraser" aria-pressed="false">지우개</button>
+  </div>
+  <div class="mg">
+    <button class="mb" data-w="2" aria-pressed="false">가늘게</button>
+    <button class="mb" data-w="4" aria-pressed="true">보통</button>
+    <button class="mb" data-w="8" aria-pressed="false">굵게</button>
+  </div>
+  <div class="mg">
+    <button class="mb" id="mUndo">되돌리기</button>
+    <button class="mb" id="mClear">이 장 지우기</button>
+  </div>
+  <div class="mg">
+    <button class="mb" id="mPrev" aria-label="이전 장">◀</button>
+    <span class="mpg" id="mPg">1 / 1</span>
+    <button class="mb" id="mNext" aria-label="다음 장">▶</button>
+    <button class="mb" id="mAdd">+ 새 장</button>
+  </div>
+</div>
+<div class="paper" id="paper"><canvas id="cv"></canvas><p class="mhint" id="mhint">손가락이나 펜으로 자유롭게 쓰세요 · 자동 저장</p></div>
 </section>
 </div>
 
@@ -383,8 +421,8 @@ function renderTable(){
 // ===== 페이지 넘기기 =====
 const pager=$('#pager');
 function go(name,smooth=true){const el=$('#p-'+name);if(!el)return;pager.scrollTo({left:el.offsetLeft,behavior:smooth?'smooth':'auto'});setTab(name)}
-const PAGES=['quiz','table','wrong'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
-const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));ro.observe($('#p-wrong'));
+const PAGES=['quiz','table','wrong','memo'];let cur='quiz';function fit(){const el=$('#p-'+cur);if(el)pager.style.height=el.scrollHeight+'px'}
+const ro=new ResizeObserver(fit);ro.observe($('#p-quiz'));ro.observe($('#p-table'));ro.observe($('#p-wrong'));ro.observe($('#p-memo'));
 function setTab(name){cur=name;fit();document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===name));if(location.hash!=='#'+name)history.replaceState(null,'','#'+name)}
 let st;pager.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{setTab(PAGES[Math.round(pager.scrollLeft/pager.clientWidth)]||'quiz')},80)});
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);window.scrollTo({top:0})}
@@ -399,6 +437,45 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){try{
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{})});
 }catch(e){}}
+// ===== 이면지 =====
+{
+const cv=$('#cv'),ctx=cv.getContext('2d'),paper=$('#paper');
+let sheets=store.get('sq-memo',[[]]);if(!Array.isArray(sheets)||!sheets.length)sheets=[[]];
+let si=Math.min(store.get('sq-memo-i',0),sheets.length-1),color='#14241d',width=4,eraser=false,penSeen=false,curS=null,saveT;
+const save=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{store.set('sq-memo',sheets);store.set('sq-memo-i',si)},300)};
+function size(){const w=paper.clientWidth;if(!w)return;const top=paper.getBoundingClientRect().top+window.scrollY;
+  const h=Math.max(420,window.innerHeight-Math.max(0,$('#mtool').offsetHeight)-($('.tabs').offsetHeight)-40);
+  const r=devicePixelRatio||1;cv.width=w*r;cv.height=h*r;cv.style.height=h+'px';ctx.setTransform(r,0,0,r,0,0);draw()}
+function stroke(s){if(!s.p.length)return;ctx.save();ctx.globalCompositeOperation=s.e?'destination-out':'source-over';
+  ctx.strokeStyle=s.c;ctx.fillStyle=s.c;ctx.lineCap=ctx.lineJoin='round';
+  if(s.p.length===1){ctx.beginPath();ctx.arc(s.p[0][0],s.p[0][1],s.w/2,0,7);ctx.fill()}
+  else for(let i=1;i<s.p.length;i++){const a=s.p[i-1],b=s.p[i];ctx.lineWidth=s.w*(s.e?1:(0.6+0.8*(b[2]||.5)));ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke()}
+  ctx.restore()}
+function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke);
+  $('#mPg').textContent=`${si+1} / ${sheets.length}`;$('#mPrev').disabled=si===0;$('#mNext').disabled=si===sheets.length-1;
+  $('#mhint').style.display=sheets[si].length?'none':''}
+const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')penSeen=true;if(penSeen&&e.pointerType==='touch')return;
+  e.preventDefault();cv.setPointerCapture(e.pointerId);curS={c:color,w:eraser?width*5:width,e:eraser,p:[pos(e)]};sheets[si].push(curS);$('#mhint').style.display='none';stroke(curS)});
+cv.addEventListener('pointermove',e=>{if(!curS)return;const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+  for(const ev of evs){curS.p.push(pos(ev))}const n=curS.p.length;stroke({...curS,p:curS.p.slice(Math.max(0,n-evs.length-1))})});
+const end=()=>{if(curS){curS=null;save()}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+// 펜을 쓰면 손가락 터치는 무시(손바닥 인식 방지) → 손가락으로는 화면 넘기기 가능
+cv.addEventListener('touchstart',e=>{if(penSeen)return;e.preventDefault()},{passive:false});
+document.addEventListener('click',e=>{
+  const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
+  const w=e.target.closest('[data-w]');if(w){width=+w.dataset.w;document.querySelectorAll('[data-w]').forEach(b=>b.setAttribute('aria-pressed',b===w));return}
+  const id=e.target.id;
+  if(id==='mEraser'){eraser=!eraser;$('#mEraser').setAttribute('aria-pressed',eraser);document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',!eraser&&b.dataset.pen===color))}
+  else if(id==='mUndo'){sheets[si].pop();draw();save()}
+  else if(id==='mClear'){if(!sheets[si].length)return;if($('#mClear').dataset.sure){sheets[si]=[];delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기';draw();save()}
+    else{$('#mClear').dataset.sure=1;$('#mClear').textContent='한 번 더 누르면 지워요';setTimeout(()=>{delete $('#mClear').dataset.sure;$('#mClear').textContent='이 장 지우기'},2500)}}
+  else if(id==='mPrev'&&si>0){si--;draw();save()}
+  else if(id==='mNext'&&si<sheets.length-1){si++;draw();save()}
+  else if(id==='mAdd'){sheets.push([]);si=sheets.length-1;draw();save()}
+});
+const mro=new ResizeObserver(size);mro.observe(paper);addEventListener('resize',size);size();
+}
 requestAnimationFrame(()=>{const h=location.hash.slice(1);if(PAGES.includes(h)&&h!=='quiz')go(h,false)});
 
 }
