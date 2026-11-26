@@ -96,8 +96,9 @@ body{padding-bottom:env(safe-area-inset-bottom)}
 .tbl sup{color:var(--seal);font-size:11px;font-weight:700;margin-inline-start:3px;white-space:nowrap}
 .tbl .rd td{background:var(--sage);font-weight:700;color:var(--green)}
 .tbl .st{color:var(--seal)}
-@media(max-width:600px){.tbl{font-size:14px}.tbl tr{border:1.5px solid var(--line);border-radius:10px;margin-bottom:12px;padding:10px 12px;background:var(--card)}.tbl td{border:0}.tbl td:first-child{font-size:17px;padding-inline-start:0}.tbl td:first-child::before{display:none}.tbl .rd{border:0;background:none;padding:0}.tbl .rd td{padding:4px 0;background:none}.tbl .rd td::before{display:none}}
-@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:5.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:5em;margin-inline-start:-5.5em;white-space:normal;color:var(--mute);font-size:13px}.stack td:empty{display:none}}
+@media(max-width:1180px){.tbl{font-size:14px;background:none}.tbl tr{border:1.5px solid var(--line);border-radius:10px;margin-bottom:12px;padding:10px 12px;background:var(--card)}.tbl td{border:0}.tbl td:first-child{font-size:17px;padding-inline-start:0}.tbl td:first-child::before{display:none}.tbl .rd{border:0;background:none;padding:0}.tbl .rd td{padding:4px 0;background:none}.tbl .rd td::before{display:none}}
+@media(max-width:1180px){.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:5.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:5em;margin-inline-start:-5.5em;white-space:normal;color:var(--mute);font-size:13px}.stack td:empty{display:none}}
+@media(min-width:700px) and (max-width:1180px){.tbl tbody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}.tbl tr{margin-bottom:0}.tbl .rd{grid-column:1/-1}.tbl{font-size:15px}}
 .wnote .wh{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
 .wnote .hjs{font-family:"Noto Serif KR",serif;color:var(--green)}
 .wnote .hot{font-size:12px;font-weight:700;color:var(--seal);border:1.5px solid var(--seal);border-radius:4px;padding:0 5px}
