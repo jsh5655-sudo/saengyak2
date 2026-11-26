@@ -460,7 +460,9 @@ function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke)
   $('#mhint').style.display=sheets[si].length?'none':''}
 const btnErase=e=>e.pointerType!=='touch'&&(((e.buttons|0)&34)!==0||e.button===2||e.button===5);
 const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
-cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return; // 손가락은 못 씀 (펜·마우스만)
+// 손가락: 쓰지 않고 옆으로 밀면 탭 넘기기
+let sw=null;
+cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){if(e.isPrimary)sw={x:e.clientX,y:e.clientY,id:e.pointerId};return}
   e.preventDefault();cv.setPointerCapture(e.pointerId);
   // S펜/스타일러스 옆 버튼(barrel)을 누른 채 쓰거나 지우개 끝을 쓰면 지우개
   const er=eraser||btnErase(e);
@@ -468,7 +470,10 @@ cv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch')return; // 손�
 cv.addEventListener('pointermove',e=>{if(!curS)return;
   const want=eraser||btnErase(e);if(want!==curS.e){const last=curS.p[curS.p.length-1];curS={c:color,w:want?Math.max(width,4)*5:width,e:want,p:[last]};sheets[si].push(curS)}const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
   for(const ev of evs){curS.p.push(pos(ev))}const n=curS.p.length;stroke({...curS,p:curS.p.slice(Math.max(0,n-evs.length-1))})});
-const end=()=>{if(curS){curS=null;save()}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+const end=()=>{if(curS){curS=null;save()}};
+cv.addEventListener('pointerup',e=>{if(!sw||e.pointerId!==sw.id)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;sw=null;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5){const i=PAGES.indexOf('memo');go(PAGES[dx<0?Math.min(i+1,PAGES.length-1):i-1])}});
+cv.addEventListener('pointercancel',e=>{if(sw&&e.pointerId===sw.id)sw=null});cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 // 펜을 쓰면 손가락 터치는 무시(손바닥 인식 방지) → 손가락으로는 화면 넘기기 가능
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 
