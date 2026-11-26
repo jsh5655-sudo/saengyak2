@@ -311,7 +311,8 @@ function show(){
   let body;
   if(q.t.mc){
     q.opts=options(q);
-    body=`<div class="opts">${q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${i+1}. ${esc(o)}</button>`).join('')}</div>`;
+    const lab=o=>q.t.k==='fam'?o.replace(/\s*\([^)]*\)\s*$/,''):o; // 과명은 한글 빼고 라틴명만
+    body=`<div class="opts">${q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${i+1}. ${esc(lab(o))}</button>`).join('')}</div>`;
   } else {
     body=(q.t.k==='comp'?`<textarea id="inp" placeholder="예) 성분군 : 성분명"></textarea>`:`<input type="text" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예) Genus species">`)
       +`<div class="row"><button class="btn" id="chk">채점</button><button class="btn ghost" id="skip">모르겠음</button></div>`;
