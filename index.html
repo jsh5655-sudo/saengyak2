@@ -456,11 +456,15 @@ function draw(){ctx.clearRect(0,0,cv.width,cv.height);sheets[si].forEach(stroke)
   $('#mhint').style.display=sheets[si].length?'none':''}
 const pos=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)*10)/10,Math.round((e.clientY-r.top)*10)/10,e.pressure||.5]};
 cv.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')penSeen=true;if(penSeen&&e.pointerType==='touch')return;
-  e.preventDefault();cv.setPointerCapture(e.pointerId);curS={c:color,w:eraser?width*5:width,e:eraser,p:[pos(e)]};sheets[si].push(curS);$('#mhint').style.display='none';stroke(curS)});
+  e.preventDefault();cv.setPointerCapture(e.pointerId);
+  // S펜/스타일러스 옆 버튼(barrel)을 누른 채 쓰거나 지우개 끝을 쓰면 지우개
+  const er=eraser||(e.pointerType==='pen'&&((e.buttons&2)||(e.buttons&32)||e.button===2||e.button===5));
+  curS={c:color,w:er?Math.max(width,4)*5:width,e:er,p:[pos(e)]};sheets[si].push(curS);$('#mhint').style.display='none';stroke(curS)});
 cv.addEventListener('pointermove',e=>{if(!curS)return;const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
   for(const ev of evs){curS.p.push(pos(ev))}const n=curS.p.length;stroke({...curS,p:curS.p.slice(Math.max(0,n-evs.length-1))})});
 const end=()=>{if(curS){curS=null;save()}};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 // 펜을 쓰면 손가락 터치는 무시(손바닥 인식 방지) → 손가락으로는 화면 넘기기 가능
+cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('touchstart',e=>{if(penSeen)return;e.preventDefault()},{passive:false});
 document.addEventListener('click',e=>{
   const p=e.target.closest('[data-pen]');if(p){color=p.dataset.pen;eraser=false;document.querySelectorAll('[data-pen]').forEach(b=>b.setAttribute('aria-pressed',b===p));$('#mEraser').setAttribute('aria-pressed',false);return}
